@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/app_model.dart';
 import '../repository/notification_provider.dart';
 import 'package:intl/intl.dart';
+import '../../audio/tts/tts_provider.dart';
 
 class AppDetailScreen extends ConsumerWidget {
   final AppModel app;
@@ -40,12 +41,31 @@ class AppDetailScreen extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Logic to read notifications
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    final controller = ref.read(ttsControllerProvider);
+                    switch (value) {
+                      case 'latest':
+                        controller.readLatest(app.id!);
+                        break;
+                      case 'all':
+                        controller.readAllFromApp(app.id!);
+                        break;
+                      case 'important':
+                        controller.readImportant(app.id!);
+                        break;
+                    }
                   },
-                  icon: const Icon(Icons.volume_up),
-                  label: const Text('Read'),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(value: 'latest', child: Text('Read Latest')),
+                    const PopupMenuItem(value: 'all', child: Text('Read All')),
+                    const PopupMenuItem(value: 'important', child: Text('Read Important')),
+                  ],
+                  child: ElevatedButton.icon(
+                    onPressed: null,
+                    icon: const Icon(Icons.volume_up),
+                    label: const Text('Read'),
+                  ),
                 ),
                 ElevatedButton.icon(
                   onPressed: () {

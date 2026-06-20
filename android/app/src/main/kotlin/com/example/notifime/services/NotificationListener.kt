@@ -2,11 +2,19 @@ package com.example.notifime.services
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import android.content.Intent
 import android.util.Log
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.dart.DartExecutor
+import io.flutter.plugin.common.MethodChannel
+import com.example.notifime.MainActivity
 
 class NotificationListener : NotificationListenerService() {
     private val TAG = "NotificationListener"
+
+    companion object {
+        private const val CHANNEL = "com.example.notifime/notifications"
+        var methodChannel: MethodChannel? = null
+    }
 
     override fun onListenerConnected() {
         super.onListenerConnected()
@@ -22,6 +30,10 @@ class NotificationListener : NotificationListenerService() {
         }
 
         val packageName = sbn.packageName
+        if (packageName == "com.example.notifime") {
+            return
+        }
+        
         Log.d(TAG, "Notification from: $packageName")
 
         val extras = sbn.notification.extras
@@ -30,15 +42,15 @@ class NotificationListener : NotificationListenerService() {
         
         Log.d(TAG, "Title: $title, Text: $text")
 
-        // Broadcast to MainActivity
-        val intent = Intent("com.example.notifime.NOTIFICATION_RECEIVED")
-        intent.putExtra("packageName", packageName)
-        intent.putExtra("appName", getAppName(packageName))
-        intent.putExtra("title", title)
-        intent.putExtra("message", text)
-        sendBroadcast(intent)
-        
-        Log.d(TAG, "Broadcast sent for notification from: ${getAppName(packageName)}")
+        val data = mapOf(
+            "packageName" to packageName,
+            "appName" to getAppName(packageName),
+            "title" to title,
+            "message" to text
+        )
+
+        methodChannel?.invokeMethod("onNotificationReceived", data)
+        Log.d(TAG, "Sent to Flutter: ${getAppName(packageName)}")
     }
 
     private fun getAppName(packageName: String): String {

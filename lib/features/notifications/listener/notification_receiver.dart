@@ -1,5 +1,7 @@
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repository/notification_repository.dart';
+import '../repository/notification_provider.dart';
 import '../models/notification_model.dart';
 import '../models/app_model.dart';
 import '../../ai/processors/priority_processor.dart';
@@ -9,9 +11,10 @@ import 'dart:developer' as developer;
 class NotificationReceiver {
   static const MethodChannel _channel = MethodChannel('com.example.notifime/notifications');
   final NotificationRepository _repository;
+  final ProviderContainer _container;
   final PrivacyProcessor _privacyProcessor = PrivacyProcessor();
 
-  NotificationReceiver(this._repository);
+  NotificationReceiver(this._repository, this._container);
 
   void startListening() {
     developer.log('NotificationReceiver: Starting to listen');
@@ -65,6 +68,10 @@ class NotificationReceiver {
 
       await _repository.insertNotification(notification);
       developer.log('Notification saved successfully!');
+
+      // 5. Refresh UI
+      _container.read(appListProvider.notifier).refresh();
+      developer.log('UI refreshed');
     } catch (e) {
       developer.log('Error handling notification: $e', error: e);
     }

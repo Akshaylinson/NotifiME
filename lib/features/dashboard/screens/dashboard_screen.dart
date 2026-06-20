@@ -17,6 +17,12 @@ class DashboardScreen extends ConsumerWidget {
         title: const Text('AI Notification Assistant'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              ref.read(appListProvider.notifier).refresh();
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.notifications),
             onPressed: () {
               Navigator.push(

@@ -11,7 +11,7 @@ void main() async {
 
   final container = ProviderContainer();
   final repository = container.read(notificationRepositoryProvider);
-  final receiver = NotificationReceiver(repository);
+  final receiver = NotificationReceiver(repository, container);
   receiver.startListening();
 
   runApp(

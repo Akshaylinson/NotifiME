@@ -1,0 +1,44 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Dart files
+*.dart text diff=dart
+
+# Gradle files
+*.gradle text diff=java
+gradlew text eol=lf
+*.bat text eol=crlf
+
+# Kotlin files
+*.kt text diff=kotlin
+*.kts text diff=kotlin
+
+# Config files
+*.json text
+*.xml text
+*.yaml text
+*.yml text
+*.toml text
+*.properties text
+
+# Shell scripts
+*.sh text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.bin binary
+*.tflite binary
+*.onnx binary
+*.db binary
+*.sqlite binary
+*.jar binary
+*.so binary
+*.dylib binary
+*.dll binary
+*.exe binary

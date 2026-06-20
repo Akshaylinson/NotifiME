@@ -1,0 +1,60 @@
+import 'package:flutter/services.dart';
+import '../repository/notification_repository.dart';
+import '../models/notification_model.dart';
+import '../models/app_model.dart';
+import '../../ai/processors/priority_processor.dart';
+import '../../ai/processors/privacy_processor.dart';
+
+class NotificationReceiver {
+  static const MethodChannel _channel = MethodChannel('com.example.notifime/notifications');
+  final NotificationRepository _repository;
+  final PrivacyProcessor _privacyProcessor = PrivacyProcessor();
+
+  NotificationReceiver(this._repository);
+
+  void startListening() {
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'onNotificationReceived') {
+        final Map<dynamic, dynamic> data = call.arguments;
+        await _handleIncomingNotification(data);
+      }
+    });
+  }
+
+  Future<void> _handleIncomingNotification(Map<dynamic, dynamic> data) async {
+    final String packageName = data['packageName'] ?? 'unknown';
+    final String appName = data['appName'] ?? 'Unknown App';
+    final String title = data['title'] ?? '';
+    final String message = data['message'] ?? '';
+
+    // 1. Get or Create App
+    final apps = await _repository.getAllApps();
+    var app = apps.firstWhere(
+      (a) => a.packageName == packageName,
+      orElse: () => AppModel(appName: appName, packageName: packageName),
+    );
+
+    if (app.id == null) {
+      final id = await _repository.insertApp(app);
+      app = AppModel(id: id, appName: appName, packageName: packageName);
+    }
+
+    // 2. Privacy Masking
+    final maskedMessage = _privacyProcessor.maskSensitiveInfo(message);
+
+    // 3. Priority Detection
+    final priority = PriorityProcessor.detectPriority(title, maskedMessage);
+
+    // 4. Save Notification
+    final notification = NotificationModel(
+      appId: app.id!,
+      sender: title, // Simplified mapping
+      title: title,
+      message: maskedMessage,
+      timestamp: DateTime.now(),
+      priority: priority,
+    );
+
+    await _repository.insertNotification(notification);
+  }
+}

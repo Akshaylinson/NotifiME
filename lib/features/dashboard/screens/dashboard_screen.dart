@@ -4,7 +4,6 @@ import '../../notifications/repository/notification_provider.dart';
 import '../../notifications/screens/app_detail_screen.dart';
 import '../../notifications/screens/permission_screen.dart';
 import '../../settings/screens/settings_screen.dart';
-import '../../audio/tts/tts_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -60,18 +59,7 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                     title: Text(app.appName),
                     subtitle: Text('Notifications: ${app.notificationCount}'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.volume_up),
-                          onPressed: () {
-                            ref.read(ttsControllerProvider).readLatest(app.id!);
-                          },
-                        ),
-                        const Icon(Icons.chevron_right),
-                      ],
-                    ),
+                    trailing: const Icon(Icons.chevron_right),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -86,26 +74,12 @@ class DashboardScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: 'readAll',
-            onPressed: () {
-              ref.read(ttsControllerProvider).readAll();
-            },
-            child: const Icon(Icons.volume_up),
-          ),
-          const SizedBox(height: 8),
-          FloatingActionButton.extended(
-            heroTag: 'summary',
-            onPressed: () {
-              // Global Summary Action
-            },
-            label: const Text('Summary'),
-            icon: const Icon(Icons.summarize),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // Global Summary Action
+        },
+        label: const Text('Global Summary'),
+        icon: const Icon(Icons.summarize),
       ),
     );
   }

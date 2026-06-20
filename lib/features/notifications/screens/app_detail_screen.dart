@@ -41,31 +41,12 @@ class AppDetailScreen extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    final controller = ref.read(ttsControllerProvider);
-                    switch (value) {
-                      case 'latest':
-                        controller.readLatest(app.id!);
-                        break;
-                      case 'all':
-                        controller.readAllFromApp(app.id!);
-                        break;
-                      case 'important':
-                        controller.readImportant(app.id!);
-                        break;
-                    }
+                ElevatedButton.icon(
+                  onPressed: () {
+                    ref.read(ttsControllerProvider).readAllFromApp(app.id!);
                   },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'latest', child: Text('Read Latest')),
-                    const PopupMenuItem(value: 'all', child: Text('Read All')),
-                    const PopupMenuItem(value: 'important', child: Text('Read Important')),
-                  ],
-                  child: ElevatedButton.icon(
-                    onPressed: null,
-                    icon: const Icon(Icons.volume_up),
-                    label: const Text('Read'),
-                  ),
+                  icon: const Icon(Icons.volume_up),
+                  label: const Text('Read'),
                 ),
                 ElevatedButton.icon(
                   onPressed: () {

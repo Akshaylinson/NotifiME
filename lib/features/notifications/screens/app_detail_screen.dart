@@ -13,6 +13,7 @@ class AppDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notificationsAsyncValue = ref.watch(notificationsByAppProvider(app.id!));
+    final ttsState = ref.watch(ttsControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -78,13 +79,14 @@ class AppDetailScreen extends ConsumerWidget {
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () {
-                  ref.read(ttsControllerProvider).readAllFromApp(app.id!);
-                },
-                icon: const Icon(Icons.volume_up),
-                label: const Text('Read'),
+                onPressed: ttsState.isPlaying 
+                    ? () => ref.read(ttsControllerProvider.notifier).stop()
+                    : () => ref.read(ttsControllerProvider.notifier).readAllFromApp(app.id!),
+                icon: Icon(ttsState.isPlaying ? Icons.stop : Icons.volume_up),
+                label: Text(ttsState.isPlaying ? 'Stop' : 'Read'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: ttsState.isPlaying ? Colors.red : null,
                 ),
               ),
             ),

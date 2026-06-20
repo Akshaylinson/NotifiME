@@ -4,6 +4,7 @@ import '../models/notification_model.dart';
 import '../models/app_model.dart';
 import '../../ai/processors/priority_processor.dart';
 import '../../ai/processors/privacy_processor.dart';
+import 'dart:developer' as developer;
 
 class NotificationReceiver {
   static const MethodChannel _channel = MethodChannel('com.example.notifime/notifications');
@@ -13,48 +14,59 @@ class NotificationReceiver {
   NotificationReceiver(this._repository);
 
   void startListening() {
+    developer.log('NotificationReceiver: Starting to listen');
     _channel.setMethodCallHandler((call) async {
+      developer.log('NotificationReceiver: Received method call: ${call.method}');
       if (call.method == 'onNotificationReceived') {
         final Map<dynamic, dynamic> data = call.arguments;
+        developer.log('NotificationReceiver: Data received: $data');
         await _handleIncomingNotification(data);
       }
     });
   }
 
   Future<void> _handleIncomingNotification(Map<dynamic, dynamic> data) async {
-    final String packageName = data['packageName'] ?? 'unknown';
-    final String appName = data['appName'] ?? 'Unknown App';
-    final String title = data['title'] ?? '';
-    final String message = data['message'] ?? '';
+    try {
+      final String packageName = data['packageName'] ?? 'unknown';
+      final String appName = data['appName'] ?? 'Unknown App';
+      final String title = data['title'] ?? '';
+      final String message = data['message'] ?? '';
 
-    // 1. Get or Create App
-    final apps = await _repository.getAllApps();
-    var app = apps.firstWhere(
-      (a) => a.packageName == packageName,
-      orElse: () => AppModel(appName: appName, packageName: packageName),
-    );
+      developer.log('Processing notification from: $appName');
 
-    if (app.id == null) {
-      final id = await _repository.insertApp(app);
-      app = AppModel(id: id, appName: appName, packageName: packageName);
+      // 1. Get or Create App
+      final apps = await _repository.getAllApps();
+      var app = apps.firstWhere(
+        (a) => a.packageName == packageName,
+        orElse: () => AppModel(appName: appName, packageName: packageName),
+      );
+
+      if (app.id == null) {
+        final id = await _repository.insertApp(app);
+        app = AppModel(id: id, appName: appName, packageName: packageName);
+        developer.log('Created new app entry with ID: $id');
+      }
+
+      // 2. Privacy Masking
+      final maskedMessage = _privacyProcessor.maskSensitiveInfo(message);
+
+      // 3. Priority Detection
+      final priority = PriorityProcessor.detectPriority(title, maskedMessage);
+
+      // 4. Save Notification
+      final notification = NotificationModel(
+        appId: app.id!,
+        sender: title,
+        title: title,
+        message: maskedMessage,
+        timestamp: DateTime.now(),
+        priority: priority,
+      );
+
+      await _repository.insertNotification(notification);
+      developer.log('Notification saved successfully!');
+    } catch (e) {
+      developer.log('Error handling notification: $e', error: e);
     }
-
-    // 2. Privacy Masking
-    final maskedMessage = _privacyProcessor.maskSensitiveInfo(message);
-
-    // 3. Priority Detection
-    final priority = PriorityProcessor.detectPriority(title, maskedMessage);
-
-    // 4. Save Notification
-    final notification = NotificationModel(
-      appId: app.id!,
-      sender: title, // Simplified mapping
-      title: title,
-      message: maskedMessage,
-      timestamp: DateTime.now(),
-      priority: priority,
-    );
-
-    await _repository.insertNotification(notification);
   }
 }

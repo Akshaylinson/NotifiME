@@ -18,11 +18,17 @@ class AppDetailScreen extends ConsumerWidget {
         title: Text(app.appName),
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              ref.read(notificationsByAppProvider(app.id!).notifier).refresh();
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.delete_sweep),
             onPressed: () async {
               await ref.read(notificationRepositoryProvider).deleteNotificationsByApp(app.id!);
-              ref.refresh(appListProvider);
-              ref.refresh(notificationsByAppProvider(app.id!));
+              ref.read(appListProvider.notifier).refresh();
+              ref.read(notificationsByAppProvider(app.id!).notifier).refresh();
             },
           ),
         ],

@@ -27,7 +27,25 @@ class AppListNotifier extends StateNotifier<AsyncValue<List<AppModel>>> {
   }
 }
 
-final notificationsByAppProvider = FutureProvider.family<List<NotificationModel>, int>((ref, appId) async {
-  final repository = ref.watch(notificationRepositoryProvider);
-  return repository.getNotificationsByApp(appId);
+final notificationsByAppProvider = StateNotifierProvider.family<NotificationsByAppNotifier, AsyncValue<List<NotificationModel>>, int>((ref, appId) {
+  return NotificationsByAppNotifier(ref.watch(notificationRepositoryProvider), appId);
 });
+
+class NotificationsByAppNotifier extends StateNotifier<AsyncValue<List<NotificationModel>>> {
+  final NotificationRepository _repository;
+  final int _appId;
+
+  NotificationsByAppNotifier(this._repository, this._appId) : super(const AsyncValue.loading()) {
+    refresh();
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    try {
+      final notifications = await _repository.getNotificationsByApp(_appId);
+      state = AsyncValue.data(notifications);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}

@@ -69,8 +69,16 @@ class NotificationReceiver {
       await _repository.insertNotification(notification);
       developer.log('Notification saved successfully!');
 
-      // 5. Refresh UI
+      // 5. Refresh UI - Dashboard
       _container.read(appListProvider.notifier).refresh();
+      
+      // 6. Refresh UI - App Detail if viewing
+      try {
+        _container.read(notificationsByAppProvider(app.id!).notifier).refresh();
+      } catch (e) {
+        // Provider might not be initialized yet, ignore
+      }
+      
       developer.log('UI refreshed');
     } catch (e) {
       developer.log('Error handling notification: $e', error: e);

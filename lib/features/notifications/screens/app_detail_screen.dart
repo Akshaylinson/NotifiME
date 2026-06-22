@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../audio/tts/tts_provider.dart';
 import '../../ai/summarizer/notification_summarizer.dart';
 import '../../ai/gemma/gemma_service.dart';
+import '../../../core/providers/connectivity_provider.dart';
 
 class AppDetailScreen extends ConsumerStatefulWidget {
   final AppModel app;
@@ -39,6 +40,7 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
   Widget build(BuildContext context) {
     final notificationsAsyncValue = ref.watch(notificationsByAppProvider(widget.app.id!));
     final ttsState = ref.watch(ttsControllerProvider);
+    final connectivityAsync = ref.watch(connectivityProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -81,81 +83,116 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: ElevatedButton.icon(
-          onPressed: _isSummarizing
-              ? null
-              : () async {
-                  final notificationsAsyncValue =
-                      ref.read(notificationsByAppProvider(widget.app.id!));
-                  
-                  notificationsAsyncValue.whenData((notifications) async {
-                    if (notifications.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('No notifications to summarize')),
-                      );
-                      return;
-                    }
+      bottomNavigationBar: connectivityAsync.when(
+        data: (hasInternet) => _buildSummarizeButton(context, hasInternet),
+        loading: () => _buildSummarizeButton(context, true),
+        error: (_, __) => _buildSummarizeButton(context, false),
+      ),
+    );
+  }
 
-                    setState(() {
-                      _isSummarizing = true;
-                    });
-
-                    try {
-                      // Generate AI-powered intelligent summary
-                      final summary = await _summarizer.summarizeAppNotificationsIntelligent(
-                        widget.app.appName,
-                        notifications,
-                      );
-
-                      // Play summary as audio
-                      await ref.read(ttsControllerProvider.notifier).readSummary(summary);
-                    } catch (e) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error: ${e.toString()}')),
-                        );
-                      }
-                    } finally {
-                      if (mounted) {
-                        setState(() {
-                          _isSummarizing = false;
-                        });
-                      }
-                    }
-                  });
-                },
-          icon: _isSummarizing
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
+  Widget _buildSummarizeButton(BuildContext context, bool hasInternet) {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!hasInternet)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.wifi_off, size: 16, color: Colors.orange[700]),
+                  const SizedBox(width: 8),
+                  Text(
+                    'No internet - TTS unavailable',
+                    style: TextStyle(
+                      color: Colors.orange[700],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                )
-              : const Icon(Icons.auto_awesome, color: Colors.white),
-          label: Text(
-            _isSummarizing ? 'Summarizing...' : 'Summarize',
-            style: const TextStyle(color: Colors.white),
+                ],
+              ),
+            ),
+          Opacity(
+            opacity: (hasInternet && !_isSummarizing) ? 1.0 : 0.5,
+            child: ElevatedButton.icon(
+              onPressed: (_isSummarizing || !hasInternet)
+                  ? null
+                  : () async {
+                      final notificationsAsyncValue =
+                          ref.read(notificationsByAppProvider(widget.app.id!));
+                      
+                      notificationsAsyncValue.whenData((notifications) async {
+                        if (notifications.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('No notifications to summarize')),
+                          );
+                          return;
+                        }
+
+                        setState(() {
+                          _isSummarizing = true;
+                        });
+
+                        try {
+                          // Generate AI-powered intelligent summary (offline)
+                          final summary = await _summarizer.summarizeAppNotificationsIntelligent(
+                            widget.app.appName,
+                            notifications,
+                          );
+
+                          // Play summary as audio (requires internet)
+                          await ref.read(ttsControllerProvider.notifier).readSummary(summary);
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: ${e.toString()}')),
+                            );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isSummarizing = false;
+                            });
+                          }
+                        }
+                      });
+                    },
+              icon: _isSummarizing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.auto_awesome, color: Colors.white),
+              label: Text(
+                _isSummarizing ? 'Summarizing...' : 'Summarize',
+                style: const TextStyle(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                foregroundColor: Colors.white,
+              ),
+            ),
           ),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-            foregroundColor: Colors.white,
-          ),
-        ),
+        ],
       ),
     );
   }

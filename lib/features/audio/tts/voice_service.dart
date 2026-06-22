@@ -17,9 +17,7 @@ class VoiceModel {
   factory VoiceModel.fromJson(Map<String, dynamic> json) {
     String id = json['id'] ?? json['voice_id'] ?? json['voice'] ?? '';
     String name = json['name'] ?? json['voice_name'] ?? id;
-    String engine = json['engine'] ?? 'supertonic';
     
-    // Determine gender from voice ID (M1-M5 = Male, F1-F5 = Female)
     String gender = 'Unknown';
     if (id.startsWith('M')) {
       gender = 'Male';
@@ -52,7 +50,6 @@ class VoiceService {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        // API returns: { voices: [{id: "M1", name: "M1", engine: "supertonic"}, ...] }
         if (response.data is Map && response.data['voices'] != null) {
           final voicesList = response.data['voices'] as List;
           return voicesList
@@ -66,8 +63,6 @@ class VoiceService {
       }
     } catch (e) {
       print('Error fetching voices from API: $e');
-      // If API fails, return hardcoded voices
-      return _getDefaultVoices();
     }
 
     return _getDefaultVoices();
@@ -76,7 +71,6 @@ class VoiceService {
   List<VoiceModel> _getDefaultVoices() {
     final voices = <VoiceModel>[];
     
-    // Male voices
     for (var voice in TTSConfig.maleVoices) {
       voices.add(VoiceModel(
         id: voice,
@@ -86,7 +80,6 @@ class VoiceService {
       ));
     }
     
-    // Female voices
     for (var voice in TTSConfig.femaleVoices) {
       voices.add(VoiceModel(
         id: voice,

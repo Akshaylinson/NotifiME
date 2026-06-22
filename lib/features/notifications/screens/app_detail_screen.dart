@@ -128,67 +128,70 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
             ),
           Opacity(
             opacity: (hasInternet && !_isSummarizing) ? 1.0 : 0.5,
-            child: ElevatedButton.icon(
-              onPressed: (_isSummarizing || !hasInternet)
-                  ? null
-                  : () async {
-                      final notificationsAsyncValue =
-                          ref.read(notificationsByAppProvider(widget.app.id!));
-                      
-                      notificationsAsyncValue.whenData((notifications) async {
-                        if (notifications.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('No notifications to summarize')),
-                          );
-                          return;
-                        }
-
-                        setState(() {
-                          _isSummarizing = true;
-                        });
-
-                        try {
-                          // Generate AI-powered intelligent summary (offline)
-                          final summary = await _summarizer.summarizeAppNotificationsIntelligent(
-                            widget.app.appName,
-                            notifications,
-                          );
-
-                          // Play summary as audio (requires internet)
-                          await ref.read(ttsControllerProvider.notifier).readSummary(summary);
-                        } catch (e) {
-                          if (mounted) {
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: (_isSummarizing || !hasInternet)
+                    ? null
+                    : () async {
+                        final notificationsAsyncValue =
+                            ref.read(notificationsByAppProvider(widget.app.id!));
+                        
+                        notificationsAsyncValue.whenData((notifications) async {
+                          if (notifications.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: ${e.toString()}')),
+                              const SnackBar(content: Text('No notifications to summarize')),
                             );
+                            return;
                           }
-                        } finally {
-                          if (mounted) {
-                            setState(() {
-                              _isSummarizing = false;
-                            });
+
+                          setState(() {
+                            _isSummarizing = true;
+                          });
+
+                          try {
+                            // Generate AI-powered intelligent summary (offline)
+                            final summary = await _summarizer.summarizeAppNotificationsIntelligent(
+                              widget.app.appName,
+                              notifications,
+                            );
+
+                            // Play summary as audio (requires internet)
+                            await ref.read(ttsControllerProvider.notifier).readSummary(summary);
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error: ${e.toString()}')),
+                              );
+                            }
+                          } finally {
+                            if (mounted) {
+                              setState(() {
+                                _isSummarizing = false;
+                              });
+                            }
                           }
-                        }
-                      });
-                    },
-              icon: _isSummarizing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.auto_awesome, color: Colors.white),
-              label: Text(
-                _isSummarizing ? 'Summarizing...' : 'Summarize',
-                style: const TextStyle(color: Colors.white),
-              ),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                foregroundColor: Colors.white,
+                        });
+                      },
+                icon: _isSummarizing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.auto_awesome, color: Colors.white),
+                label: Text(
+                  _isSummarizing ? 'Summarizing...' : 'Summarize Today',
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                  foregroundColor: Colors.white,
+                ),
               ),
             ),
           ),

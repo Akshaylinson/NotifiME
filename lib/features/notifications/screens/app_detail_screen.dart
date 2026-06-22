@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/app_model.dart';
+import '../models/notification_model.dart';
 import '../repository/notification_provider.dart';
 import 'package:intl/intl.dart';
 import '../../audio/tts/tts_provider.dart';
@@ -15,6 +16,9 @@ class AppDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
+  int? _expandedNotificationId;
+  int? _playingNotificationId;
+
   @override
   void dispose() {
     ref.read(ttsControllerProvider.notifier).stop();
@@ -54,20 +58,13 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
                 itemCount: notifications.length,
                 itemBuilder: (context, index) {
                   final notification = notifications[index];
-                  return ListTile(
-                    title: Text(notification.title),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(notification.message),
-                        const SizedBox(height: 4),
-                        Text(
-                          DateFormat('MMM d, h:mm a').format(notification.timestamp),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                    isThreeLine: true,
+                  final isExpanded = _expandedNotificationId == notification.id;
+                  final isPlaying = _playingNotificationId == notification.id;
+
+                  return _buildNotificationCard(
+                    notification,
+                    isExpanded,
+                    isPlaying,
                   );
                 },
               ),
@@ -86,35 +83,152 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
             ),
           ],
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: ttsState.isPlaying 
-                    ? () => ref.read(ttsControllerProvider.notifier).stop()
-                    : () => ref.read(ttsControllerProvider.notifier).readAllFromApp(widget.app.id!),
-                icon: Icon(ttsState.isPlaying ? Icons.stop : Icons.volume_up),
-                label: Text(ttsState.isPlaying ? 'Stop' : 'Read'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: ttsState.isPlaying ? Colors.red : null,
-                ),
+        child: ElevatedButton.icon(
+          onPressed: () {
+            // TODO: Implement summarize functionality
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Summarize feature coming soon')),
+            );
+          },
+          icon: const Icon(Icons.auto_awesome),
+          label: const Text('Summarize'),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationCard(
+    NotificationModel notification,
+    bool isExpanded,
+    bool isPlaying,
+  ) {
+    final ttsState = ref.watch(ttsControllerProvider);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      elevation: isExpanded ? 4 : 1,
+      color: isPlaying
+          ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
+          : null,
+      child: InkWell(
+        onTap: () async {
+          setState(() {
+            if (_expandedNotificationId == notification.id) {
+              // Collapse if already expanded
+              _expandedNotificationId = null;
+              ref.read(ttsControllerProvider.notifier).stop();
+              _playingNotificationId = null;
+            } else {
+              // Expand and read
+              _expandedNotificationId = notification.id;
+              _playingNotificationId = notification.id;
+            }
+          });
+
+          if (_playingNotificationId == notification.id) {
+            // Read the notification
+            await ref.read(ttsControllerProvider.notifier).readSingleNotification(notification);
+            if (mounted) {
+              setState(() {
+                _playingNotificationId = null;
+              });
+            }
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      notification.title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: isExpanded ? FontWeight.bold : FontWeight.w500,
+                          ),
+                    ),
+                  ),
+                  if (isPlaying)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.volume_up,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (!isPlaying)
+                    Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                      color: Colors.grey,
+                    ),
+                ],
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  // Logic to generate summary
-                },
-                icon: const Icon(Icons.auto_awesome),
-                label: const Text('Summarize'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
+              const SizedBox(height: 8),
+              Text(
+                notification.message,
+                maxLines: isExpanded ? null : 2,
+                overflow: isExpanded ? null : TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 14,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    DateFormat('MMM d, h:mm a').format(notification.timestamp),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const Spacer(),
+                  if (notification.priority == NotificationPriority.high)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'High Priority',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.red[700],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

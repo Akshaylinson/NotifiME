@@ -198,14 +198,20 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              Expanded(
-                child: Text(
+              if (isExpanded)
+                Text(
                   notification.message,
-                  maxLines: isExpanded ? null : 2,
-                  overflow: isExpanded ? null : TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium,
+                )
+              else
+                Expanded(
+                  child: Text(
+                    notification.message,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 ),
-              ),
               const SizedBox(height: 8),
               Row(
                 children: [

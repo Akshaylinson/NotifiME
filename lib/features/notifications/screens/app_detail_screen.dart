@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/app_model.dart';
 import '../models/notification_model.dart';
 import '../repository/notification_provider.dart';
-import '../services/notification_summarizer.dart';
 import 'package:intl/intl.dart';
 import '../../audio/tts/tts_provider.dart';
+import '../../ai/summarizer/notification_summarizer.dart';
+import '../../ai/gemma/gemma_service.dart';
 
 class AppDetailScreen extends ConsumerStatefulWidget {
   final AppModel app;
@@ -19,8 +20,14 @@ class AppDetailScreen extends ConsumerStatefulWidget {
 class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
   int? _expandedNotificationId;
   int? _playingNotificationId;
-  final _summarizer = NotificationSummarizer();
+  late final NotificationSummarizer _summarizer;
   bool _isSummarizing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _summarizer = NotificationSummarizer(GemmaServiceImpl());
+  }
 
   @override
   void dispose() {
@@ -105,16 +112,27 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
                       _isSummarizing = true;
                     });
 
-                    // Generate summary
-                    final summary = _summarizer.summarizeNotifications(notifications);
+                    try {
+                      // Generate AI-powered intelligent summary
+                      final summary = await _summarizer.summarizeAppNotificationsIntelligent(
+                        widget.app.appName,
+                        notifications,
+                      );
 
-                    // Play summary as audio
-                    await ref.read(ttsControllerProvider.notifier).readSummary(summary);
-
-                    if (mounted) {
-                      setState(() {
-                        _isSummarizing = false;
-                      });
+                      // Play summary as audio
+                      await ref.read(ttsControllerProvider.notifier).readSummary(summary);
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: ${e.toString()}')),
+                        );
+                      }
+                    } finally {
+                      if (mounted) {
+                        setState(() {
+                          _isSummarizing = false;
+                        });
+                      }
                     }
                   });
                 },

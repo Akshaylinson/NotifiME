@@ -15,11 +15,23 @@ class VoiceModel {
   });
 
   factory VoiceModel.fromJson(Map<String, dynamic> json) {
+    String id = json['id'] ?? json['voice_id'] ?? json['voice'] ?? '';
+    String name = json['name'] ?? json['voice_name'] ?? id;
+    String engine = json['engine'] ?? 'supertonic';
+    
+    // Determine gender from voice ID (M1-M5 = Male, F1-F5 = Female)
+    String gender = 'Unknown';
+    if (id.startsWith('M')) {
+      gender = 'Male';
+    } else if (id.startsWith('F')) {
+      gender = 'Female';
+    }
+    
     return VoiceModel(
-      id: json['id'] ?? json['voice_id'] ?? '',
-      name: json['name'] ?? json['voice_name'] ?? '',
-      gender: json['gender'] ?? '',
-      language: json['language'] ?? 'en',
+      id: id,
+      name: name,
+      gender: gender,
+      language: json['language'] ?? json['lang'] ?? 'en',
     );
   }
 }
@@ -35,23 +47,25 @@ class VoiceService {
         options: Options(
           headers: {
             'X-API-Key': TTSConfig.apiKey,
-            'Content-Type': 'application/json',
           },
         ),
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        if (response.data is List) {
-          return (response.data as List)
-              .map((voice) => VoiceModel.fromJson(voice))
+        // API returns: { voices: [{id: "M1", name: "M1", engine: "supertonic"}, ...] }
+        if (response.data is Map && response.data['voices'] != null) {
+          final voicesList = response.data['voices'] as List;
+          return voicesList
+              .map((voice) => VoiceModel.fromJson(voice as Map<String, dynamic>))
               .toList();
-        } else if (response.data is Map && response.data['voices'] != null) {
-          return (response.data['voices'] as List)
-              .map((voice) => VoiceModel.fromJson(voice))
+        } else if (response.data is List) {
+          return (response.data as List)
+              .map((voice) => VoiceModel.fromJson(voice as Map<String, dynamic>))
               .toList();
         }
       }
     } catch (e) {
+      print('Error fetching voices from API: $e');
       // If API fails, return hardcoded voices
       return _getDefaultVoices();
     }

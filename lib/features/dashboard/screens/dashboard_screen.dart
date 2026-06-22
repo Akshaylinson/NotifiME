@@ -14,7 +14,7 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Notification Assistant'),
+        title: const Text('Notiva'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

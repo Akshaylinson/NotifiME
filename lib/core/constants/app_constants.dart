@@ -1,5 +1,5 @@
 class AppConstants {
-  static const String appName = 'NotifiME';
+  static const String appName = 'Notiva';
 
   // Database Constants
   static const String dbName = 'notifications.db';

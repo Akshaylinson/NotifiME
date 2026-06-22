@@ -180,26 +180,23 @@ class VoiceSelectionDialog extends ConsumerWidget {
     String selectedVoice,
   ) {
     final isSelected = voice.id == selectedVoice;
+    final displayText = '${voice.id} (${voice.gender.toLowerCase()})';
 
-    return ListTile(
-      leading: Icon(
-        voice.gender == 'Male' ? Icons.man : Icons.woman,
-        color: isSelected ? Theme.of(context).colorScheme.primary : null,
-      ),
+    return RadioListTile<String>(
+      value: voice.id,
+      groupValue: selectedVoice,
       title: Text(
-        voice.name.isNotEmpty ? voice.name : voice.id,
+        displayText,
         style: TextStyle(
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? Theme.of(context).colorScheme.primary : null,
         ),
       ),
-      subtitle: Text('ID: ${voice.id}'),
-      trailing: isSelected
-          ? Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary)
-          : null,
-      onTap: () {
-        ref.read(selectedVoiceProvider.notifier).setVoice(voice.id);
-        Navigator.pop(context);
+      activeColor: Theme.of(context).colorScheme.primary,
+      onChanged: (value) {
+        if (value != null) {
+          ref.read(selectedVoiceProvider.notifier).setVoice(value);
+          Navigator.pop(context);
+        }
       },
     );
   }

@@ -5,22 +5,23 @@ class SummaryPrompts {
         .join('\n');
     
     return '''
-You are a helpful AI assistant summarizing notifications from $appName.
+You are summarizing notifications ONLY from the app: $appName
 
-Instructions:
-- Analyze the notifications and provide a natural, conversational summary
-- Group similar notifications (e.g., "Alwyn messaged you 3 times")
-- Extract key information and context
-- For WhatsApp: mention who messaged and about what
-- For Phone/Dialer: mention missed calls from whom
-- For YouTube Music: mention songs played
-- Be concise but informative
-- Speak as if talking to a friend
+IMPORTANT: All these notifications are from $appName app. Do NOT mention other apps like WhatsApp unless the app name IS WhatsApp.
 
-Notifications from $appName today:
+App Context: $appName
+Notifications:
 $notificationsText
 
-Provide a natural summary:''';
+Instructions:
+- These are ALL from $appName - summarize accordingly
+- For Truecaller/Phone: mention missed calls
+- For WhatsApp: mention messages and senders
+- For YouTube: mention video/music notifications
+- Be natural and concise
+- Group by sender when possible
+
+Summary:''';
   }
 
   static String appSummary(String appName, List<String> messages) {

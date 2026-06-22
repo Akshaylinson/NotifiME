@@ -36,7 +36,7 @@ class NotificationSummarizer {
     final prompt = SummaryPrompts.intelligentAppSummary(appName, notificationData);
 
     try {
-      final summary = await _gemmaService.summarize(prompt);
+      final summary = await _gemmaService.summarize(prompt, appName: appName);
       return summary;
     } catch (e) {
       // Fallback to basic summary if AI fails
@@ -47,23 +47,49 @@ class NotificationSummarizer {
   /// Fallback summary without AI
   String _generateFallbackSummary(String appName, List<NotificationModel> notifications) {
     final count = notifications.length;
+    final senders = <String>{};
     
-    if (appName.toLowerCase().contains('whatsapp')) {
-      final senders = <String>{};
-      for (var n in notifications) {
-        senders.add(n.sender);
-      }
+    for (var n in notifications) {
+      senders.add(n.sender);
+    }
+    
+    final appLower = appName.toLowerCase();
+    
+    // Truecaller/Phone/Dialer - prioritize call-related apps
+    if (appLower.contains('truecaller') || appLower.contains('phone') || appLower.contains('dialer') || appLower.contains('call')) {
       if (senders.length == 1) {
-        return '${senders.first} sent you $count messages on WhatsApp.';
+        return '${senders.first} called you $count time${count > 1 ? 's' : ''}.';
+      } else {
+        return 'You have $count missed call${count > 1 ? 's' : ''} from ${senders.length} contact${senders.length > 1 ? 's' : ''}.';
+      }
+    }
+    // WhatsApp
+    else if (appLower.contains('whatsapp')) {
+      if (senders.length == 1) {
+        return '${senders.first} sent you $count message${count > 1 ? 's' : ''} on WhatsApp.';
       } else {
         return 'You have $count messages from ${senders.length} contacts on WhatsApp.';
       }
-    } else if (appName.toLowerCase().contains('phone') || appName.toLowerCase().contains('dialer')) {
-      return 'You have $count missed calls.';
-    } else if (appName.toLowerCase().contains('youtube')) {
-      return 'You have $count YouTube notifications today.';
-    } else {
-      return 'You have $count notifications from $appName.';
+    }
+    // YouTube
+    else if (appLower.contains('youtube')) {
+      return 'You have $count YouTube notification${count > 1 ? 's' : ''} today.';
+    }
+    // Email
+    else if (appLower.contains('gmail') || appLower.contains('mail')) {
+      return 'You have $count new email${count > 1 ? 's' : ''}.';
+    }
+    // Instagram
+    else if (appLower.contains('instagram')) {
+      return 'You have $count Instagram notification${count > 1 ? 's' : ''}.';
+    }
+    // SMS
+    else if (appLower.contains('message') || appLower.contains('sms')) {
+      return 'You have $count text message${count > 1 ? 's' : ''}.';
+    }
+    // Generic
+    else {
+      return 'You have $count notification${count > 1 ? 's' : ''} from $appName.';
     }
   }
 

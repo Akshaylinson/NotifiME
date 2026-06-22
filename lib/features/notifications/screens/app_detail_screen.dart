@@ -5,32 +5,43 @@ import '../repository/notification_provider.dart';
 import 'package:intl/intl.dart';
 import '../../audio/tts/tts_provider.dart';
 
-class AppDetailScreen extends ConsumerWidget {
+class AppDetailScreen extends ConsumerStatefulWidget {
   final AppModel app;
 
   const AppDetailScreen({super.key, required this.app});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final notificationsAsyncValue = ref.watch(notificationsByAppProvider(app.id!));
+  ConsumerState<AppDetailScreen> createState() => _AppDetailScreenState();
+}
+
+class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
+  @override
+  void dispose() {
+    ref.read(ttsControllerProvider.notifier).stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final notificationsAsyncValue = ref.watch(notificationsByAppProvider(widget.app.id!));
     final ttsState = ref.watch(ttsControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(app.appName),
+        title: Text(widget.app.appName),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              ref.read(notificationsByAppProvider(app.id!).notifier).refresh();
+              ref.read(notificationsByAppProvider(widget.app.id!).notifier).refresh();
             },
           ),
           IconButton(
             icon: const Icon(Icons.delete_sweep),
             onPressed: () async {
-              await ref.read(notificationRepositoryProvider).deleteNotificationsByApp(app.id!);
+              await ref.read(notificationRepositoryProvider).deleteNotificationsByApp(widget.app.id!);
               ref.read(appListProvider.notifier).refresh();
-              ref.read(notificationsByAppProvider(app.id!).notifier).refresh();
+              ref.read(notificationsByAppProvider(widget.app.id!).notifier).refresh();
             },
           ),
         ],
@@ -81,7 +92,7 @@ class AppDetailScreen extends ConsumerWidget {
               child: ElevatedButton.icon(
                 onPressed: ttsState.isPlaying 
                     ? () => ref.read(ttsControllerProvider.notifier).stop()
-                    : () => ref.read(ttsControllerProvider.notifier).readAllFromApp(app.id!),
+                    : () => ref.read(ttsControllerProvider.notifier).readAllFromApp(widget.app.id!),
                 icon: Icon(ttsState.isPlaying ? Icons.stop : Icons.volume_up),
                 label: Text(ttsState.isPlaying ? 'Stop' : 'Read'),
                 style: ElevatedButton.styleFrom(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_constants.dart';
+import 'core/observers/audio_lifecycle_observer.dart';
+import 'features/audio/tts/tts_provider.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/notifications/listener/notification_receiver.dart';
 import 'features/notifications/repository/notification_provider.dart';
@@ -22,11 +24,11 @@ void main() async {
   );
 }
 
-class AINotificationAssistant extends StatelessWidget {
+class AINotificationAssistant extends ConsumerWidget {
   const AINotificationAssistant({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: AppConstants.appName,
       theme: ThemeData(
@@ -39,20 +41,25 @@ class AINotificationAssistant extends StatelessWidget {
         colorSchemeSeed: Colors.deepPurple,
         brightness: Brightness.dark,
       ),
+      navigatorObservers: [
+        AudioLifecycleObserver(
+          onNavigateBack: () => ref.read(ttsControllerProvider.notifier).stop(),
+        ),
+      ],
       home: const AppInitializer(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class AppInitializer extends StatefulWidget {
+class AppInitializer extends ConsumerStatefulWidget {
   const AppInitializer({super.key});
 
   @override
-  State<AppInitializer> createState() => _AppInitializerState();
+  ConsumerState<AppInitializer> createState() => _AppInitializerState();
 }
 
-class _AppInitializerState extends State<AppInitializer> with WidgetsBindingObserver {
+class _AppInitializerState extends ConsumerState<AppInitializer> with WidgetsBindingObserver {
   bool _showPermissionScreen = true;
 
   @override
@@ -64,16 +71,18 @@ class _AppInitializerState extends State<AppInitializer> with WidgetsBindingObse
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    ref.read(ttsControllerProvider.notifier).stop();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // When user comes back from settings, go to dashboard
       setState(() {
         _showPermissionScreen = false;
       });
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      ref.read(ttsControllerProvider.notifier).stop();
     }
   }
 

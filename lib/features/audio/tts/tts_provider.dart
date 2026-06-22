@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'supertonic_tts_service.dart';
+import 'voice_provider.dart';
 import '../../notifications/models/notification_model.dart';
 import '../../notifications/repository/notification_provider.dart';
 
@@ -109,8 +110,9 @@ class TTSController extends StateNotifier<TTSState> {
 
   Future<void> _speakNotification(NotificationModel notification) async {
     final tts = ref.read(ttsServiceProvider);
+    final selectedVoice = ref.read(selectedVoiceProvider);
     final text = '${notification.title}. ${notification.message}';
-    await tts.speak(text);
+    await tts.speak(text, voice: selectedVoice);
   }
 
   Future<void> stop() async {

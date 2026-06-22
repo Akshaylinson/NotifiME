@@ -146,8 +146,10 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.all(16),
+          height: isExpanded ? null : 110,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: isExpanded ? MainAxisSize.min : MainAxisSize.max,
             children: [
               Row(
                 children: [
@@ -157,6 +159,8 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: isExpanded ? FontWeight.bold : FontWeight.w500,
                           ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   if (isPlaying)
@@ -194,11 +198,13 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              Text(
-                notification.message,
-                maxLines: isExpanded ? null : 2,
-                overflow: isExpanded ? null : TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium,
+              Expanded(
+                child: Text(
+                  notification.message,
+                  maxLines: isExpanded ? null : 2,
+                  overflow: isExpanded ? null : TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ),
               const SizedBox(height: 8),
               Row(

@@ -3,6 +3,7 @@ import 'supertonic_tts_service.dart';
 import 'voice_provider.dart';
 import '../../notifications/models/notification_model.dart';
 import '../../notifications/repository/notification_provider.dart';
+import '../../settings/providers/settings_provider.dart';
 
 final ttsServiceProvider = Provider((ref) => SupertonicTTSService());
 
@@ -111,8 +112,9 @@ class TTSController extends StateNotifier<TTSState> {
   Future<void> _speakNotification(NotificationModel notification) async {
     final tts = ref.read(ttsServiceProvider);
     final selectedVoice = ref.read(selectedVoiceProvider);
+    final settings = ref.read(appSettingsProvider);
     final text = '${notification.title}. ${notification.message}';
-    await tts.speak(text, voice: selectedVoice);
+    await tts.speak(text, voice: selectedVoice, speed: settings.speechSpeed);
   }
 
   Future<void> stop() async {

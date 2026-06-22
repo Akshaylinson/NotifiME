@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../audio/tts/voice_provider.dart';
 import '../../audio/tts/voice_service.dart';
+import '../../notifications/repository/notification_provider.dart';
+import '../providers/settings_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -9,6 +11,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedVoice = ref.watch(selectedVoiceProvider);
+    final settings = ref.watch(appSettingsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -29,12 +32,30 @@ class SettingsScreen extends ConsumerWidget {
           ),
           SwitchListTile(
             title: const Text('Auto-read Notifications'),
-            value: false,
-            onChanged: (val) {},
+            subtitle: const Text('Automatically read new notifications'),
+            value: settings.autoReadNotifications,
+            onChanged: (val) {
+              ref.read(appSettingsProvider.notifier).setAutoRead(val);
+            },
           ),
           ListTile(
             title: const Text('Speech Speed'),
-            subtitle: Slider(value: 0.5, onChanged: (val) {}),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${settings.speechSpeed.toStringAsFixed(2)}x'),
+                Slider(
+                  value: settings.speechSpeed,
+                  min: 0.5,
+                  max: 2.0,
+                  divisions: 15,
+                  label: '${settings.speechSpeed.toStringAsFixed(2)}x',
+                  onChanged: (val) {
+                    ref.read(appSettingsProvider.notifier).setSpeechSpeed(val);
+                  },
+                ),
+              ],
+            ),
           ),
           const Divider(),
           const Padding(
@@ -49,7 +70,7 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             title: const Text('Clear All Notifications'),
             trailing: const Icon(Icons.delete_forever, color: Colors.red),
-            onTap: () {},
+            onTap: () => _showClearConfirmationDialog(context, ref),
           ),
         ],
       ),
@@ -61,6 +82,96 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => const VoiceSelectionDialog(),
     );
+  }
+
+  void _showClearConfirmationDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 48),
+        title: const Text('Clear All Notifications'),
+        content: const Text(
+          'This will permanently delete all notifications from the database. This action cannot be undone.\n\nAre you sure you want to continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _clearAllNotifications(context, ref);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Delete All'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _clearAllNotifications(BuildContext context, WidgetRef ref) async {
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Clearing notifications...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final repository = ref.read(notificationRepositoryProvider);
+      final apps = await repository.getAllApps();
+      
+      for (var app in apps) {
+        await repository.deleteNotificationsByApp(app.id!);
+      }
+
+      // Refresh UI
+      ref.read(appListProvider.notifier).refresh();
+
+      // Close loading
+      if (context.mounted) Navigator.pop(context);
+
+      // Show success message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All notifications cleared successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading
+      if (context.mounted) Navigator.pop(context);
+      
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error clearing notifications: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
 

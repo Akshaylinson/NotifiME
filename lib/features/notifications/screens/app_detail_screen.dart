@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/app_model.dart';
 import '../models/notification_model.dart';
 import '../repository/notification_provider.dart';
+import '../services/notification_summarizer.dart';
 import 'package:intl/intl.dart';
 import '../../audio/tts/tts_provider.dart';
 
@@ -18,6 +19,8 @@ class AppDetailScreen extends ConsumerStatefulWidget {
 class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
   int? _expandedNotificationId;
   int? _playingNotificationId;
+  final _summarizer = NotificationSummarizer();
+  bool _isSummarizing = false;
 
   @override
   void dispose() {
@@ -84,16 +87,50 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
           ],
         ),
         child: ElevatedButton.icon(
-          onPressed: () {
-            // TODO: Implement summarize functionality
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Summarize feature coming soon')),
-            );
-          },
-          icon: const Icon(Icons.auto_awesome, color: Colors.white),
-          label: const Text(
-            'Summarize',
-            style: TextStyle(color: Colors.white),
+          onPressed: _isSummarizing
+              ? null
+              : () async {
+                  final notificationsAsyncValue =
+                      ref.read(notificationsByAppProvider(widget.app.id!));
+                  
+                  notificationsAsyncValue.whenData((notifications) async {
+                    if (notifications.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No notifications to summarize')),
+                      );
+                      return;
+                    }
+
+                    setState(() {
+                      _isSummarizing = true;
+                    });
+
+                    // Generate summary
+                    final summary = _summarizer.summarizeNotifications(notifications);
+
+                    // Play summary as audio
+                    await ref.read(ttsControllerProvider.notifier).readSummary(summary);
+
+                    if (mounted) {
+                      setState(() {
+                        _isSummarizing = false;
+                      });
+                    }
+                  });
+                },
+          icon: _isSummarizing
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.auto_awesome, color: Colors.white),
+          label: Text(
+            _isSummarizing ? 'Summarizing...' : 'Summarize',
+            style: const TextStyle(color: Colors.white),
           ),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),

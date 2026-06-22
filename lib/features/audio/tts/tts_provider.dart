@@ -24,6 +24,22 @@ class TTSController extends StateNotifier<TTSState> {
   
   TTSController(this.ref) : super(TTSState());
 
+  Future<void> readSummary(String summaryText) async {
+    if (state.isPlaying) return;
+    
+    state = state.copyWith(isPlaying: true);
+    final tts = ref.read(ttsServiceProvider);
+    final selectedVoice = ref.read(selectedVoiceProvider);
+    final settings = ref.read(appSettingsProvider);
+    tts.resetStopFlag();
+    
+    try {
+      await tts.speak(summaryText, voice: selectedVoice, speed: settings.speechSpeed);
+    } finally {
+      state = state.copyWith(isPlaying: false);
+    }
+  }
+
   Future<void> readSingleNotification(NotificationModel notification) async {
     if (state.isPlaying) return;
     

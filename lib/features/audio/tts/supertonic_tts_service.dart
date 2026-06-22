@@ -11,6 +11,8 @@ class SupertonicTTSService {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isStopped = false;
   
+  bool get isStopped => _isStopped;
+  
   Future<void> speak(String text, {String voice = TTSConfig.defaultVoice, double speed = TTSConfig.defaultSpeed}) async {
     try {
       // Split long text into chunks

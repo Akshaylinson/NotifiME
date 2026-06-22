@@ -54,6 +54,7 @@ class TTSController extends StateNotifier<TTSState> {
       final notifications = await repo.getNotificationsByApp(appId);
       
       for (var notification in notifications) {
+        if (tts.isStopped) break;
         await _speakNotification(notification);
       }
     } finally {
@@ -74,6 +75,7 @@ class TTSController extends StateNotifier<TTSState> {
       final important = notifications.where((n) => n.priority == 'high').toList();
       
       for (var notification in important) {
+        if (tts.isStopped) break;
         await _speakNotification(notification);
       }
     } finally {
@@ -93,8 +95,10 @@ class TTSController extends StateNotifier<TTSState> {
       final apps = await repo.getAllApps();
       
       for (var app in apps) {
+        if (tts.isStopped) break;
         final notifications = await repo.getNotificationsByApp(app.id!);
         for (var notification in notifications) {
+          if (tts.isStopped) break;
           await _speakNotification(notification);
         }
       }

@@ -90,10 +90,15 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
               const SnackBar(content: Text('Summarize feature coming soon')),
             );
           },
-          icon: const Icon(Icons.auto_awesome),
-          label: const Text('Summarize'),
+          icon: const Icon(Icons.auto_awesome, color: Colors.white),
+          label: const Text(
+            'Summarize',
+            style: TextStyle(color: Colors.white),
+          ),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            foregroundColor: Colors.white,
           ),
         ),
       ),

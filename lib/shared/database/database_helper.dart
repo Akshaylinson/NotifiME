@@ -51,16 +51,6 @@ class DatabaseHelper {
     ''');
 
     await db.execute('''
-      CREATE TABLE ${AppConstants.tableSummaries} (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        app_id INTEGER,
-        summary_text TEXT,
-        created_at INTEGER,
-        FOREIGN KEY (app_id) REFERENCES ${AppConstants.tableApps} (id) ON DELETE CASCADE
-      )
-    ''');
-
-    await db.execute('''
       CREATE TABLE ${AppConstants.tableSettings} (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         voice TEXT,

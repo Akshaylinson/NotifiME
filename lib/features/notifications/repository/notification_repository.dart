@@ -22,6 +22,25 @@ class NotificationRepository {
     return List.generate(maps.length, (i) => AppModel.fromMap(maps[i]));
   }
 
+  Future<NotificationModel?> findRecentDuplicate(
+      int appId, String title, String message) async {
+    final db = await _dbHelper.database;
+    final windowStart = DateTime.now()
+        .subtract(Duration(seconds: AppConstants.deduplicationWindowSeconds))
+        .millisecondsSinceEpoch;
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      AppConstants.tableNotifications,
+      where: 'app_id = ? AND title = ? AND message = ? AND timestamp >= ?',
+      whereArgs: [appId, title, message, windowStart],
+      orderBy: 'timestamp DESC',
+      limit: 1,
+    );
+
+    if (maps.isEmpty) return null;
+    return NotificationModel.fromMap(maps.first);
+  }
+
   Future<int> insertNotification(NotificationModel notification) async {
     final db = await _dbHelper.database;
 

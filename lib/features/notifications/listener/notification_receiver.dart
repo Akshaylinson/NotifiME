@@ -4,8 +4,9 @@ import '../repository/notification_repository.dart';
 import '../repository/notification_provider.dart';
 import '../models/notification_model.dart';
 import '../models/app_model.dart';
-import '../../ai/processors/priority_processor.dart';
-import '../../ai/processors/privacy_processor.dart';
+import '../processors/priority_processor.dart';
+import '../processors/privacy_processor.dart';
+import '../../../core/constants/app_constants.dart';
 import 'dart:developer' as developer;
 
 class NotificationReceiver {
@@ -56,7 +57,22 @@ class NotificationReceiver {
       // 3. Priority Detection
       final priority = PriorityProcessor.detectPriority(title, maskedMessage);
 
-      // 4. Save Notification
+      // 4. Check for duplicates
+      final duplicate = await _repository.findRecentDuplicate(
+        app.id!,
+        title,
+        maskedMessage,
+      );
+
+      if (duplicate != null) {
+        developer.log(
+          'Duplicate notification ignored (within deduplication window): '
+          'App: $appName, Title: $title',
+        );
+        return;
+      }
+
+      // 5. Save Notification
       final notification = NotificationModel(
         appId: app.id!,
         sender: title,
@@ -69,10 +85,10 @@ class NotificationReceiver {
       await _repository.insertNotification(notification);
       developer.log('Notification saved successfully!');
 
-      // 5. Refresh UI - Dashboard
+      // 6. Refresh UI - Dashboard
       _container.read(appListProvider.notifier).refresh();
       
-      // 6. Refresh UI - App Detail if viewing
+      // 7. Refresh UI - App Detail if viewing
       try {
         _container.read(notificationsByAppProvider(app.id!).notifier).refresh();
       } catch (e) {

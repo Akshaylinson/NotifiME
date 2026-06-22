@@ -213,23 +213,6 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
                     DateFormat('MMM d, h:mm a').format(notification.timestamp),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  const Spacer(),
-                  if (notification.priority == NotificationPriority.high)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'High Priority',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.red[700],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ],

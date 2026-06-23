@@ -37,7 +37,6 @@ class RetentionPolicyService {
         requiresDeviceIdle: false,
         requiresStorageNotLow: false,
       ),
-      existingWorkPolicy: ExistingWorkPolicy.replace,
     );
     
     developer.log('RetentionPolicy: Scheduled periodic cleanup (daily)');
@@ -62,7 +61,6 @@ class RetentionPolicyService {
       'cleanup_now',
       cleanupTaskTag,
       initialDelay: Duration.zero,
-      existingWorkPolicy: ExistingWorkPolicy.replace,
     );
     
     developer.log('RetentionPolicy: Manual cleanup triggered');

@@ -7,12 +7,20 @@ import '../../notifications/screens/permission_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 import '../../ai/summarizer/notification_summarizer.dart';
 import '../../ai/gemma/gemma_service.dart';
-import '../../audio/tts/tts_service.dart';
+import '../../audio/tts/supertonic_tts_service.dart';
+import '../../settings/providers/settings_provider.dart';
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
-  Future<void> _generateGlobalSummary(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  bool _isGeneratingSummary = false;
+
+  Future<void> _generateGlobalSummary(BuildContext context) async {
     // Show loading dialog
     showDialog(
       context: context,
@@ -43,6 +51,11 @@ class DashboardScreen extends ConsumerWidget {
     );
 
     try {
+      // Get settings for voice and speech rate
+      final settings = ref.read(appSettingsProvider);
+      final voice = settings.voice;
+      final speechRate = settings.speechRate;
+
       // Get all apps and their notifications
       final repository = NotificationRepository();
       final apps = await repository.getAllApps();
@@ -91,10 +104,13 @@ class DashboardScreen extends ConsumerWidget {
       if (context.mounted) {
         Navigator.pop(context); // Close loading dialog
         
-        // Play audio directly using TTS
-        final ttsService = TTSService();
-        await ttsService.init();
-        await ttsService.speak(summary);
+        // Play audio directly using TTS with settings
+        final ttsService = SupertonicTTSService();
+        await ttsService.speak(
+          summary,
+          voice: voice,
+          speed: speechRate,
+        );
         
         // Show brief confirmation
         ScaffoldMessenger.of(context).showSnackBar(

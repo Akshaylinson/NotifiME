@@ -21,34 +21,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _isGeneratingSummary = false;
 
   Future<void> _generateGlobalSummary(BuildContext context) async {
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Center(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text(
-                  'Generating summary...',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Please wait',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    // Set loading state
+    setState(() {
+      _isGeneratingSummary = true;
+    });
 
     try {
       // Get settings for voice and speech rate
@@ -62,7 +38,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       
       if (apps.isEmpty) {
         if (context.mounted) {
-          Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('No notifications to summarize')),
           );
@@ -82,7 +57,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
       if (notificationsByApp.isEmpty) {
         if (context.mounted) {
-          Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('No notifications to summarize')),
           );
@@ -102,7 +76,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       );
 
       if (context.mounted) {
-        Navigator.pop(context); // Close loading dialog
+        // Show brief confirmation
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Playing summary...'),
+            duration: Duration(seconds: 2),
+          ),
+        );
         
         // Play audio directly using TTS with settings
         final ttsService = SupertonicTTSService();
@@ -111,27 +91,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           voice: voice,
           speed: speechRate,
         );
-        
-        // Show brief confirmation
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Playing summary...'),
-            duration: Duration(seconds: 2),
-          ),
-        );
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.pop(context); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
         );
+      }
+    } finally {
+      // Reset loading state
+      if (mounted) {
+        setState(() {
+          _isGeneratingSummary = false;
+        });
       }
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final appsAsyncValue = ref.watch(appListProvider);
 
     return Scaffold(
@@ -314,9 +292,44 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         data: (apps) => apps.isEmpty
             ? null
             : FloatingActionButton.extended(
-                onPressed: () => _generateGlobalSummary(context, ref),
-                label: const Text('Global Summary', style: TextStyle(fontWeight: FontWeight.w600)),
-                icon: const Icon(Icons.auto_awesome_rounded),
+                onPressed: _isGeneratingSummary ? null : () => _generateGlobalSummary(context),
+                label: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _isGeneratingSummary
+                      ? Row(
+                          key: const ValueKey('loading'),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Generating...',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        )
+                      : const Row(
+                          key: ValueKey('ready'),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.auto_awesome_rounded),
+                            SizedBox(width: 8),
+                            Text(
+                              'Global Summary',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                ),
               ),
         loading: () => null,
         error: (_, __) => null,

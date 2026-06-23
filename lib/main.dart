@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'core/observers/audio_lifecycle_observer.dart';
+import 'core/services/retention_policy_service.dart';
 import 'features/audio/tts/tts_provider.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/notifications/listener/notification_receiver.dart';
@@ -20,6 +21,10 @@ void main() async {
 
   // Load settings and cleanup old notifications
   await container.read(appSettingsProvider.notifier).initializeAndCleanup();
+
+  // Initialize retention policy background service
+  final retentionService = RetentionPolicyService();
+  await retentionService.initialize();
 
   runApp(
     UncontrolledProviderScope(

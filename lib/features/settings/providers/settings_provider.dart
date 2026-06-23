@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/database/database_helper.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/services/retention_policy_service.dart';
 import '../../notifications/repository/notification_provider.dart';
 import '../../notifications/repository/notification_repository.dart';
 
@@ -172,5 +173,16 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
     state = updated;
     // Cleanup when retention period changes
     await _cleanupOldNotifications();
+    // Reschedule background cleanup with new settings
+    await _rescheduleCleanup();
+  }
+
+  Future<void> _rescheduleCleanup() async {
+    try {
+      final retentionService = RetentionPolicyService();
+      await retentionService.schedulePeriodicCleanup();
+    } catch (e) {
+      // Ignore if workmanager not initialized yet
+    }
   }
 }

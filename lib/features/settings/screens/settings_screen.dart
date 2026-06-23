@@ -4,6 +4,7 @@ import '../../audio/tts/voice_provider.dart';
 import '../../audio/tts/voice_service.dart';
 import '../../notifications/repository/notification_provider.dart';
 import '../providers/settings_provider.dart';
+import '../../../core/services/retention_policy_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -69,6 +70,12 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => _showRetentionDialog(context, ref, settings.retentionDays),
           ),
           ListTile(
+            title: const Text('Run Cleanup Now'),
+            subtitle: const Text('Manually delete old notifications'),
+            trailing: const Icon(Icons.cleaning_services, color: Colors.blue),
+            onTap: () => _runManualCleanup(context, ref),
+          ),
+          ListTile(
             title: const Text('Clear All Notifications'),
             trailing: const Icon(Icons.delete_forever, color: Colors.red),
             onTap: () => _showClearConfirmationDialog(context, ref),
@@ -122,6 +129,83 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _runManualCleanup(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.cleaning_services, color: Colors.blue, size: 48),
+        title: const Text('Run Cleanup Now'),
+        content: Text(
+          'This will delete all notifications older than ${ref.read(appSettingsProvider).retentionDays} days.\n\nDo you want to continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Run Cleanup'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Running cleanup...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      try {
+        final settings = ref.read(appSettingsProvider);
+        final repository = ref.read(notificationRepositoryProvider);
+        await repository.deleteOldNotifications(settings.retentionDays);
+
+        // Refresh UI
+        ref.read(appListProvider.notifier).refresh();
+
+        if (context.mounted) Navigator.pop(context);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cleanup completed successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) Navigator.pop(context);
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Cleanup failed: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _showClearConfirmationDialog(BuildContext context, WidgetRef ref) {

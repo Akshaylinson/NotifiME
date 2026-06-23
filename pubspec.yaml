@@ -29,6 +29,7 @@ dependencies:
   google_generative_ai: ^0.2.2
   ffi: ^2.1.0
   connectivity_plus: ^5.0.0
+  workmanager: ^0.9.0+3
 
 dev_dependencies:
   flutter_test:
@@ -75,3 +76,4 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+

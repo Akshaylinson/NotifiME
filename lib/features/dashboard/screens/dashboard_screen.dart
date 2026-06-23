@@ -9,6 +9,7 @@ import '../../ai/summarizer/notification_summarizer.dart';
 import '../../ai/gemma/gemma_service.dart';
 import '../../audio/tts/supertonic_tts_service.dart';
 import '../../settings/providers/settings_provider.dart';
+import '../../notifications/widgets/app_icon_widget.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -195,14 +196,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 itemBuilder: (context, index) {
                   final app = apps[index];
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
+                    margin: const EdgeInsets.only(bottom: 10),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
                           color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -210,7 +211,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       elevation: 0,
                       margin: EdgeInsets.zero,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                         side: BorderSide(
                           color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
                           width: 1,
@@ -225,59 +226,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             ),
                           );
                         },
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                         child: Padding(
-                          padding: const EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(14),
                           child: Row(
                             children: [
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Theme.of(context).colorScheme.primary,
-                                      Theme.of(context).colorScheme.secondary,
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(18),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    app.appName[0].toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
+                              AppIconWidget(
+                                iconPath: app.iconPath,
+                                appName: app.appName,
+                                size: 52,
+                                borderRadius: 14,
                               ),
-                              const SizedBox(width: 18),
+                              const SizedBox(width: 14),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       app.appName,
-                                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                         fontWeight: FontWeight.w600,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: 6),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
                                           colors: [
@@ -285,23 +260,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                             Theme.of(context).colorScheme.secondaryContainer,
                                           ],
                                         ),
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(
                                             Icons.circle_notifications,
-                                            size: 16,
+                                            size: 14,
                                             color: Theme.of(context).colorScheme.primary,
                                           ),
-                                          const SizedBox(width: 6),
+                                          const SizedBox(width: 5),
                                           Text(
                                             '${app.notificationCount} ${app.notificationCount == 1 ? "notification" : "notifications"}',
                                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                               color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 11,
                                             ),
                                           ),
                                         ],
@@ -311,14 +286,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
                                   Icons.arrow_forward_ios_rounded,
-                                  size: 18,
+                                  size: 16,
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
                               ),

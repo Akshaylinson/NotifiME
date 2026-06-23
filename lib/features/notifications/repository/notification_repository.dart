@@ -160,4 +160,14 @@ class NotificationRepository {
       );
     }
   }
+
+  Future<void> updateAppIcon(int appId, String iconPath) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      AppConstants.tableApps,
+      {'icon_path': iconPath},
+      where: 'id = ?',
+      whereArgs: [appId],
+    );
+  }
 }

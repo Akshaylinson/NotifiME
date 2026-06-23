@@ -42,11 +42,14 @@ class NotificationListener : NotificationListenerService() {
         
         Log.d(TAG, "Title: $title, Text: $text")
 
+        val iconPath = AppIconExtractor.getIconPath(this, packageName)
+        
         val data = mapOf(
             "packageName" to packageName,
             "appName" to getAppName(packageName),
             "title" to title,
-            "message" to text
+            "message" to text,
+            "iconPath" to iconPath
         )
 
         methodChannel?.invokeMethod("onNotificationReceived", data)

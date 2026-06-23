@@ -35,6 +35,7 @@ class NotificationReceiver {
       final String appName = data['appName'] ?? 'Unknown App';
       final String title = data['title'] ?? '';
       final String message = data['message'] ?? '';
+      final String? iconPath = data['iconPath'];
 
       developer.log('Processing notification from: $appName');
 
@@ -42,13 +43,25 @@ class NotificationReceiver {
       final apps = await _repository.getAllApps();
       var app = apps.firstWhere(
         (a) => a.packageName == packageName,
-        orElse: () => AppModel(appName: appName, packageName: packageName),
+        orElse: () => AppModel(
+          appName: appName,
+          packageName: packageName,
+          iconPath: iconPath,
+        ),
       );
 
       if (app.id == null) {
         final id = await _repository.insertApp(app);
-        app = AppModel(id: id, appName: appName, packageName: packageName);
+        app = AppModel(
+          id: id,
+          appName: appName,
+          packageName: packageName,
+          iconPath: iconPath,
+        );
         developer.log('Created new app entry with ID: $id');
+      } else if (app.iconPath == null && iconPath != null) {
+        // Update icon path if it was missing
+        await _repository.updateAppIcon(app.id!, iconPath);
       }
 
       // 2. Privacy Masking

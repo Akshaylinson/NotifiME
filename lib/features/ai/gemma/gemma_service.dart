@@ -1,15 +1,9 @@
-import 'dart:io';
-import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
-import 'model_manager_service.dart';
-
 abstract class GemmaService {
   Future<void> initialize();
   Future<String> summarize(String text, {String? appName});
 }
 
 class GemmaServiceImpl implements GemmaService {
-  final ModelManagerService _modelManager = ModelManagerService();
   bool _isInitialized = false;
 
   @override

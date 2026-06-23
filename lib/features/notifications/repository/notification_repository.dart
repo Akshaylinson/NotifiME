@@ -85,6 +85,15 @@ class NotificationRepository {
     return List.generate(maps.length, (i) => NotificationModel.fromMap(maps[i]));
   }
 
+  Future<List<NotificationModel>> getAllNotifications() async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      AppConstants.tableNotifications,
+      orderBy: 'timestamp DESC',
+    );
+    return List.generate(maps.length, (i) => NotificationModel.fromMap(maps[i]));
+  }
+
   Future<void> markAllAsRead(int appId) async {
     final db = await _dbHelper.database;
     await db.update(

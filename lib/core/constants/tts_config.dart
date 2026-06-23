@@ -7,7 +7,7 @@ class TTSConfig {
   static const List<String> femaleVoices = ['F1', 'F2', 'F3', 'F4', 'F5'];
   
   // Default settings
-  static const String defaultVoice = 'M1';
+  static const String defaultVoice = 'F2';
   static const double defaultSpeed = 1.05;
   static const int defaultQuality = 8;
 }

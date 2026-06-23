@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../features/settings/providers/settings_provider.dart';
 import 'voice_service.dart';
 import '../../../core/constants/tts_config.dart';
 
@@ -10,23 +10,8 @@ final availableVoicesProvider = FutureProvider<List<VoiceModel>>((ref) async {
   return await service.fetchAvailableVoices();
 });
 
-final selectedVoiceProvider = StateNotifierProvider<SelectedVoiceNotifier, String>((ref) {
-  return SelectedVoiceNotifier();
+// Use settings provider as the source of truth for selected voice
+final selectedVoiceProvider = Provider<String>((ref) {
+  final settings = ref.watch(appSettingsProvider);
+  return settings.voice;
 });
-
-class SelectedVoiceNotifier extends StateNotifier<String> {
-  SelectedVoiceNotifier() : super(TTSConfig.defaultVoice) {
-    _loadSelectedVoice();
-  }
-
-  Future<void> _loadSelectedVoice() async {
-    final prefs = await SharedPreferences.getInstance();
-    state = prefs.getString('selected_voice') ?? TTSConfig.defaultVoice;
-  }
-
-  Future<void> setVoice(String voiceId) async {
-    state = voiceId;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selected_voice', voiceId);
-  }
-}

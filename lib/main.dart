@@ -8,6 +8,7 @@ import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/notifications/listener/notification_receiver.dart';
 import 'features/notifications/repository/notification_provider.dart';
 import 'features/notifications/screens/permission_screen.dart';
+import 'features/settings/providers/settings_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +17,9 @@ void main() async {
   final repository = container.read(notificationRepositoryProvider);
   final receiver = NotificationReceiver(repository, container);
   receiver.startListening();
+
+  // Load settings and cleanup old notifications
+  await container.read(appSettingsProvider.notifier).initializeAndCleanup();
 
   runApp(
     UncontrolledProviderScope(

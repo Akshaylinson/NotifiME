@@ -29,12 +29,11 @@ class TTSController extends StateNotifier<TTSState> {
     
     state = state.copyWith(isPlaying: true);
     final tts = ref.read(ttsServiceProvider);
-    final selectedVoice = ref.read(selectedVoiceProvider);
     final settings = ref.read(appSettingsProvider);
     tts.resetStopFlag();
     
     try {
-      await tts.speak(summaryText, voice: selectedVoice, speed: settings.speechSpeed);
+      await tts.speak(summaryText, voice: settings.voice, speed: settings.speechRate);
     } finally {
       state = state.copyWith(isPlaying: false);
     }
@@ -141,10 +140,9 @@ class TTSController extends StateNotifier<TTSState> {
 
   Future<void> _speakNotification(NotificationModel notification) async {
     final tts = ref.read(ttsServiceProvider);
-    final selectedVoice = ref.read(selectedVoiceProvider);
     final settings = ref.read(appSettingsProvider);
     final text = '${notification.title}. ${notification.message}';
-    await tts.speak(text, voice: selectedVoice, speed: settings.speechSpeed);
+    await tts.speak(text, voice: settings.voice, speed: settings.speechRate);
   }
 
   Future<void> stop() async {

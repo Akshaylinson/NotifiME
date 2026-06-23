@@ -33,7 +33,7 @@ class SettingsScreen extends ConsumerWidget {
           SwitchListTile(
             title: const Text('Auto-read Notifications'),
             subtitle: const Text('Automatically read new notifications'),
-            value: settings.autoReadNotifications,
+            value: settings.autoRead,
             onChanged: (val) {
               ref.read(appSettingsProvider.notifier).setAutoRead(val);
             },
@@ -43,15 +43,15 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${settings.speechSpeed.toStringAsFixed(2)}x'),
+                Text('${settings.speechRate.toStringAsFixed(2)}x'),
                 Slider(
-                  value: settings.speechSpeed,
+                  value: settings.speechRate,
                   min: 0.5,
                   max: 2.0,
                   divisions: 15,
-                  label: '${settings.speechSpeed.toStringAsFixed(2)}x',
+                  label: '${settings.speechRate.toStringAsFixed(2)}x',
                   onChanged: (val) {
-                    ref.read(appSettingsProvider.notifier).setSpeechSpeed(val);
+                    ref.read(appSettingsProvider.notifier).setSpeechRate(val);
                   },
                 ),
               ],
@@ -64,8 +64,9 @@ class SettingsScreen extends ConsumerWidget {
           ),
           ListTile(
             title: const Text('Retention Period'),
-            subtitle: const Text('7 Days'),
-            onTap: () {},
+            subtitle: Text('${settings.retentionDays} Days'),
+            trailing: const Icon(Icons.keyboard_arrow_right),
+            onTap: () => _showRetentionDialog(context, ref, settings.retentionDays),
           ),
           ListTile(
             title: const Text('Clear All Notifications'),
@@ -81,6 +82,45 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => const VoiceSelectionDialog(),
+    );
+  }
+
+  void _showRetentionDialog(BuildContext context, WidgetRef ref, int currentDays) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Retention Period'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Notifications older than selected days will be automatically deleted.'),
+            const SizedBox(height: 16),
+            DropdownButton<int>(
+              value: currentDays,
+              isExpanded: true,
+              items: const [
+                DropdownMenuItem(value: 7, child: Text('7 Days')),
+                DropdownMenuItem(value: 14, child: Text('14 Days')),
+                DropdownMenuItem(value: 30, child: Text('30 Days')),
+                DropdownMenuItem(value: 60, child: Text('60 Days')),
+                DropdownMenuItem(value: 90, child: Text('90 Days')),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(appSettingsProvider.notifier).setRetentionDays(value);
+                  Navigator.pop(context);
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -305,7 +345,7 @@ class VoiceSelectionDialog extends ConsumerWidget {
       activeColor: Theme.of(context).colorScheme.primary,
       onChanged: (value) {
         if (value != null) {
-          ref.read(selectedVoiceProvider.notifier).setVoice(value);
+          ref.read(appSettingsProvider.notifier).setVoice(value);
           Navigator.pop(context);
         }
       },

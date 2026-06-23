@@ -109,4 +109,46 @@ class NotificationRepository {
       whereArgs: [appId],
     );
   }
+
+  Future<void> deleteOldNotifications(int retentionDays) async {
+    final db = await _dbHelper.database;
+    final cutoffTime = DateTime.now()
+        .subtract(Duration(days: retentionDays))
+        .millisecondsSinceEpoch;
+
+    // Get apps with old notifications
+    final oldNotifications = await db.query(
+      AppConstants.tableNotifications,
+      where: 'timestamp < ?',
+      whereArgs: [cutoffTime],
+      columns: ['app_id'],
+    );
+
+    // Delete old notifications
+    await db.delete(
+      AppConstants.tableNotifications,
+      where: 'timestamp < ?',
+      whereArgs: [cutoffTime],
+    );
+
+    // Recalculate notification counts for affected apps
+    final affectedAppIds = oldNotifications
+        .map((row) => row['app_id'] as int)
+        .toSet();
+
+    for (var appId in affectedAppIds) {
+      final countResult = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM ${AppConstants.tableNotifications} WHERE app_id = ?',
+        [appId],
+      );
+      final count = countResult.first['count'] as int;
+      
+      await db.update(
+        AppConstants.tableApps,
+        {'notification_count': count},
+        where: 'id = ?',
+        whereArgs: [appId],
+      );
+    }
+  }
 }

@@ -96,24 +96,29 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            width: 1,
           ),
-        ],
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!hasInternet)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.wifi_off, size: 16, color: Colors.orange[700]),
+                  Icon(Icons.wifi_off_rounded, size: 16, color: Colors.orange[700]),
                   const SizedBox(width: 8),
                   Text(
                     'No internet - TTS unavailable',
@@ -126,72 +131,75 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
                 ],
               ),
             ),
-          Opacity(
-            opacity: (hasInternet && !_isSummarizing) ? 1.0 : 0.5,
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: (_isSummarizing || !hasInternet)
-                    ? null
-                    : () async {
-                        final notificationsAsyncValue =
-                            ref.read(notificationsByAppProvider(widget.app.id!));
-                        
-                        notificationsAsyncValue.whenData((notifications) async {
-                          if (notifications.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('No notifications to summarize')),
-                            );
-                            return;
-                          }
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: (_isSummarizing || !hasInternet)
+                  ? null
+                  : () async {
+                      final notificationsAsyncValue =
+                          ref.read(notificationsByAppProvider(widget.app.id!));
+                      
+                      notificationsAsyncValue.whenData((notifications) async {
+                        if (notifications.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('No notifications to summarize'),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          );
+                          return;
+                        }
 
-                          setState(() {
-                            _isSummarizing = true;
-                          });
-
-                          try {
-                            // Generate AI-powered intelligent summary (offline)
-                            final summary = await _summarizer.summarizeAppNotificationsIntelligent(
-                              widget.app.appName,
-                              notifications,
-                            );
-
-                            // Play summary as audio (requires internet)
-                            await ref.read(ttsControllerProvider.notifier).readSummary(summary);
-                          } catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error: ${e.toString()}')),
-                              );
-                            }
-                          } finally {
-                            if (mounted) {
-                              setState(() {
-                                _isSummarizing = false;
-                              });
-                            }
-                          }
+                        setState(() {
+                          _isSummarizing = true;
                         });
-                      },
-                icon: _isSummarizing
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.auto_awesome, color: Colors.white),
-                label: Text(
-                  _isSummarizing ? 'Summarizing...' : 'Summarize Today',
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  foregroundColor: Colors.white,
-                ),
+
+                        try {
+                          final summary = await _summarizer.summarizeAppNotificationsIntelligent(
+                            widget.app.appName,
+                            notifications,
+                          );
+
+                          await ref.read(ttsControllerProvider.notifier).readSummary(summary);
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: ${e.toString()}'),
+                                backgroundColor: Theme.of(context).colorScheme.error,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isSummarizing = false;
+                            });
+                          }
+                        }
+                      });
+                    },
+              icon: _isSummarizing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.auto_awesome_rounded, color: Colors.white),
+              label: Text(
+                _isSummarizing ? 'Summarizing...' : 'Summarize Today',
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                elevation: _isSummarizing ? 0 : 2,
               ),
             ),
           ),
@@ -209,27 +217,30 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      elevation: isExpanded ? 4 : 1,
+      elevation: isExpanded ? 2 : 0,
       color: isPlaying
-          ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
+          ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.15)
           : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: isPlaying
+            ? BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.3), width: 1.5)
+            : BorderSide.none,
+      ),
       child: InkWell(
         onTap: () async {
           setState(() {
             if (_expandedNotificationId == notification.id) {
-              // Collapse if already expanded
               _expandedNotificationId = null;
               ref.read(ttsControllerProvider.notifier).stop();
               _playingNotificationId = null;
             } else {
-              // Expand and read
               _expandedNotificationId = notification.id;
               _playingNotificationId = notification.id;
             }
           });
 
           if (_playingNotificationId == notification.id) {
-            // Read the notification
             await ref.read(ttsControllerProvider.notifier).readSingleNotification(notification);
             if (mounted) {
               setState(() {
@@ -238,10 +249,10 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
             }
           }
         },
+        borderRadius: BorderRadius.circular(16),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.all(16),
-          height: isExpanded ? null : 110,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: isExpanded ? MainAxisSize.min : MainAxisSize.max,
@@ -252,73 +263,86 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
                     child: Text(
                       notification.title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: isExpanded ? FontWeight.bold : FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: isExpanded ? null : 1,
+                      overflow: isExpanded ? null : TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   if (isPlaying)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).colorScheme.primary,
+                            Theme.of(context).colorScheme.secondary,
+                          ],
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           SizedBox(
-                            width: 16,
-                            height: 16,
+                            width: 14,
+                            height: 14,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Theme.of(context).colorScheme.onPrimary,
+                              color: Colors.white,
                             ),
                           ),
                           const SizedBox(width: 6),
                           Icon(
-                            Icons.volume_up,
-                            size: 16,
-                            color: Theme.of(context).colorScheme.onPrimary,
+                            Icons.volume_up_rounded,
+                            size: 14,
+                            color: Colors.white,
                           ),
                         ],
                       ),
-                    ),
-                  if (!isPlaying)
+                    )
+                  else
                     Icon(
-                      isExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: Colors.grey,
+                      isExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                      color: Theme.of(context).iconTheme.color,
                     ),
                 ],
               ),
-              const SizedBox(height: 8),
-              if (isExpanded)
-                Text(
-                  notification.message,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                )
-              else
-                Expanded(
-                  child: Text(
-                    notification.message,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
+              Text(
+                notification.message,
+                maxLines: isExpanded ? null : 2,
+                overflow: isExpanded ? null : TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(
-                    Icons.access_time,
-                    size: 14,
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    DateFormat('MMM d, h:mm a').format(notification.timestamp),
-                    style: Theme.of(context).textTheme.bodySmall,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.access_time_rounded,
+                          size: 12,
+                          color: Theme.of(context).colorScheme.onSecondaryContainer,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          DateFormat('MMM d, h:mm a').format(notification.timestamp),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

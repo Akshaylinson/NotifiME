@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_constants.dart';
+import 'core/theme/app_theme.dart';
 import 'core/observers/audio_lifecycle_observer.dart';
 import 'features/audio/tts/tts_provider.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
@@ -31,16 +32,9 @@ class AINotificationAssistant extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: AppConstants.appName,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.deepPurple,
-        brightness: Brightness.light,
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.deepPurple,
-        brightness: Brightness.dark,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       navigatorObservers: [
         AudioLifecycleObserver(
           onNavigateBack: () => ref.read(ttsControllerProvider.notifier).stop(),

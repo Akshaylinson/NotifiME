@@ -5,9 +5,9 @@ import '../../notifications/repository/notification_repository.dart';
 import '../../notifications/screens/app_detail_screen.dart';
 import '../../notifications/screens/permission_screen.dart';
 import '../../settings/screens/settings_screen.dart';
-import '../../ai/screens/summary_screen.dart';
 import '../../ai/summarizer/notification_summarizer.dart';
 import '../../ai/gemma/gemma_service.dart';
+import '../../audio/tts/tts_service.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -27,8 +27,13 @@ class DashboardScreen extends ConsumerWidget {
                 const CircularProgressIndicator(),
                 const SizedBox(height: 16),
                 Text(
-                  'Generating global summary...',
+                  'Generating summary...',
                   style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please wait',
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
@@ -78,22 +83,24 @@ class DashboardScreen extends ConsumerWidget {
       
       final summarizer = NotificationSummarizer(gemmaService);
       
-      // Generate global summary
-      final globalSummary = await summarizer.summarizeGlobalByApp(
+      // Generate global summary (plain text, no emojis)
+      final summary = await summarizer.summarizeGlobalByAppPlain(
         notificationsByApp.map((key, value) => MapEntry(key, value.cast())),
       );
 
       if (context.mounted) {
         Navigator.pop(context); // Close loading dialog
         
-        // Navigate to summary screen
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SummaryScreen(
-              summaryText: globalSummary,
-              title: 'Global Summary',
-            ),
+        // Play audio directly using TTS
+        final ttsService = TTSService();
+        await ttsService.init();
+        await ttsService.speak(summary);
+        
+        // Show brief confirmation
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Playing summary...'),
+            duration: Duration(seconds: 2),
           ),
         );
       }
@@ -101,7 +108,7 @@ class DashboardScreen extends ConsumerWidget {
       if (context.mounted) {
         Navigator.pop(context); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error generating summary: $e')),
+          SnackBar(content: Text('Error: $e')),
         );
       }
     }

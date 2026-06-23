@@ -147,6 +147,42 @@ class NotificationSummarizer {
     return summaries.join('\n\n');
   }
 
+  Future<String> summarizeGlobalByAppPlain(
+    Map<String, List<NotificationModel>> notificationsByApp,
+  ) async {
+    if (notificationsByApp.isEmpty) {
+      return "No notifications to summarize.";
+    }
+
+    final summaries = <String>[];
+
+    for (var entry in notificationsByApp.entries) {
+      final appName = entry.key;
+      final notifications = entry.value;
+
+      if (notifications.isEmpty) continue;
+
+      // Filter today's notifications for each app
+      final today = DateTime.now();
+      final todayNotifications = notifications.where((n) {
+        return n.timestamp.year == today.year &&
+            n.timestamp.month == today.month &&
+            n.timestamp.day == today.day;
+      }).toList();
+
+      if (todayNotifications.isEmpty) continue;
+
+      final summary = _generateAppSummaryPlain(appName, todayNotifications);
+      summaries.add(summary);
+    }
+
+    if (summaries.isEmpty) {
+      return "You have no notifications from today.";
+    }
+
+    return summaries.join('. ');
+  }
+
   String _generateAppSummary(String appName, List<NotificationModel> notifications) {
     final count = notifications.length;
     final senders = notifications.map((n) => n.sender).toSet();
@@ -200,6 +236,53 @@ class NotificationSummarizer {
     if (appLower.contains('instagram')) return '📸';
     if (appLower.contains('message') || appLower.contains('sms')) return '💬';
     return '🔔';
+  }
+
+  String _generateAppSummaryPlain(String appName, List<NotificationModel> notifications) {
+    final count = notifications.length;
+    final senders = notifications.map((n) => n.sender).toSet();
+    final highPriority = notifications.where((n) => n.priority == NotificationPriority.high).length;
+
+    final appLower = appName.toLowerCase();
+
+    // Truecaller/Phone/Dialer
+    if (appLower.contains('truecaller') || appLower.contains('phone') ||
+        appLower.contains('dialer') || appLower.contains('call')) {
+      if (count == 1) {
+        return 'You have one missed call from ${senders.first}';
+      }
+      return 'You have $count missed calls from ${senders.length} contacts';
+    }
+    // WhatsApp
+    else if (appLower.contains('whatsapp')) {
+      if (senders.length == 1) {
+        return '${senders.first} sent you $count message${count > 1 ? 's' : ''} on WhatsApp';
+      }
+      return 'You have $count WhatsApp messages from ${senders.length} contacts';
+    }
+    // YouTube
+    else if (appLower.contains('youtube')) {
+      return 'You have $count YouTube notification${count > 1 ? 's' : ''}';
+    }
+    // Email
+    else if (appLower.contains('gmail') || appLower.contains('mail')) {
+      if (highPriority > 0) {
+        return 'You have $count new email${count > 1 ? 's' : ''}, including $highPriority important';
+      }
+      return 'You have $count new email${count > 1 ? 's' : ''}';
+    }
+    // Instagram
+    else if (appLower.contains('instagram')) {
+      return 'You have $count Instagram notification${count > 1 ? 's' : ''}';
+    }
+    // SMS
+    else if (appLower.contains('message') || appLower.contains('sms')) {
+      return 'You have $count text message${count > 1 ? 's' : ''}';
+    }
+    // Generic
+    else {
+      return 'You have $count notification${count > 1 ? 's' : ''} from $appName';
+    }
   }
 
   Future<String> summarizeImportantNotifications(List<NotificationModel> notifications) async {

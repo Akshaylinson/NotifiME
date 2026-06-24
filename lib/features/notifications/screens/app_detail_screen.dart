@@ -157,12 +157,18 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
                         });
 
                         try {
+                          // Stop any currently playing audio first
+                          await ref.read(ttsControllerProvider.notifier).stop();
+                          
                           final summary = await _summarizer.summarizeAppNotificationsIntelligent(
                             widget.app.appName,
                             notifications,
                           );
 
-                          await ref.read(ttsControllerProvider.notifier).readSummary(summary);
+                          await ref.read(ttsControllerProvider.notifier).readSummary(
+                            summary,
+                            context: 'app_summary_${widget.app.id}',
+                          );
                         } catch (e) {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -229,10 +235,12 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen> {
       ),
       child: InkWell(
         onTap: () async {
+          // Stop any currently playing audio
+          await ref.read(ttsControllerProvider.notifier).stop();
+          
           setState(() {
             if (_expandedNotificationId == notification.id) {
               _expandedNotificationId = null;
-              ref.read(ttsControllerProvider.notifier).stop();
               _playingNotificationId = null;
             } else {
               _expandedNotificationId = notification.id;

@@ -5,17 +5,28 @@ import '../../notifications/models/notification_model.dart';
 import '../../notifications/repository/notification_provider.dart';
 import '../../settings/providers/settings_provider.dart';
 
-final ttsServiceProvider = Provider((ref) => SupertonicTTSService());
+// Single global TTS service instance
+final ttsServiceProvider = Provider((ref) {
+  final service = SupertonicTTSService();
+  ref.onDispose(() => service.dispose());
+  return service;
+});
 
-final ttsControllerProvider = StateNotifierProvider<TTSController, TTSState>((ref) => TTSController(ref));
+final ttsControllerProvider = StateNotifierProvider<TTSController, TTSState>((ref) {
+  return TTSController(ref);
+});
 
 class TTSState {
   final bool isPlaying;
+  final String? currentContext;
   
-  TTSState({this.isPlaying = false});
+  TTSState({this.isPlaying = false, this.currentContext});
   
-  TTSState copyWith({bool? isPlaying}) {
-    return TTSState(isPlaying: isPlaying ?? this.isPlaying);
+  TTSState copyWith({bool? isPlaying, String? currentContext}) {
+    return TTSState(
+      isPlaying: isPlaying ?? this.isPlaying,
+      currentContext: currentContext ?? this.currentContext,
+    );
   }
 }
 
@@ -24,41 +35,44 @@ class TTSController extends StateNotifier<TTSState> {
   
   TTSController(this.ref) : super(TTSState());
 
-  Future<void> readSummary(String summaryText) async {
-    if (state.isPlaying) return;
-    
-    state = state.copyWith(isPlaying: true);
+  Future<void> _stopCurrentAndStart(String context) async {
+    // Always stop any currently playing audio first
+    final tts = ref.read(ttsServiceProvider);
+    await tts.stop();
+    state = TTSState(isPlaying: true, currentContext: context);
+    tts.resetStopFlag();
+  }
+
+  Future<void> readSummary(String summaryText, {String context = 'summary'}) async {
+    await _stopCurrentAndStart(context);
     final tts = ref.read(ttsServiceProvider);
     final settings = ref.read(appSettingsProvider);
-    tts.resetStopFlag();
     
     try {
       await tts.speak(summaryText, voice: settings.voice, speed: settings.speechRate);
     } finally {
-      state = state.copyWith(isPlaying: false);
+      if (state.currentContext == context) {
+        state = TTSState(isPlaying: false);
+      }
     }
   }
 
   Future<void> readSingleNotification(NotificationModel notification) async {
-    if (state.isPlaying) return;
-    
-    state = state.copyWith(isPlaying: true);
+    await _stopCurrentAndStart('notification_${notification.id}');
     final tts = ref.read(ttsServiceProvider);
-    tts.resetStopFlag();
     
     try {
       await _speakNotification(notification);
     } finally {
-      state = state.copyWith(isPlaying: false);
+      if (state.currentContext == 'notification_${notification.id}') {
+        state = TTSState(isPlaying: false);
+      }
     }
   }
 
   Future<void> readLatest(int appId) async {
-    if (state.isPlaying) return;
-    
-    state = state.copyWith(isPlaying: true);
+    await _stopCurrentAndStart('latest_$appId');
     final tts = ref.read(ttsServiceProvider);
-    tts.resetStopFlag();
     
     try {
       final repo = ref.read(notificationRepositoryProvider);
@@ -69,36 +83,34 @@ class TTSController extends StateNotifier<TTSState> {
         await _speakNotification(latest);
       }
     } finally {
-      state = state.copyWith(isPlaying: false);
+      if (state.currentContext == 'latest_$appId') {
+        state = TTSState(isPlaying: false);
+      }
     }
   }
 
   Future<void> readAllFromApp(int appId) async {
-    if (state.isPlaying) return;
-    
-    state = state.copyWith(isPlaying: true);
+    await _stopCurrentAndStart('all_$appId');
     final tts = ref.read(ttsServiceProvider);
-    tts.resetStopFlag();
     
     try {
       final repo = ref.read(notificationRepositoryProvider);
       final notifications = await repo.getNotificationsByApp(appId);
       
       for (var notification in notifications) {
-        if (tts.isStopped) break;
+        if (tts.isStopped || state.currentContext != 'all_$appId') break;
         await _speakNotification(notification);
       }
     } finally {
-      state = state.copyWith(isPlaying: false);
+      if (state.currentContext == 'all_$appId') {
+        state = TTSState(isPlaying: false);
+      }
     }
   }
 
   Future<void> readImportant(int appId) async {
-    if (state.isPlaying) return;
-    
-    state = state.copyWith(isPlaying: true);
+    await _stopCurrentAndStart('important_$appId');
     final tts = ref.read(ttsServiceProvider);
-    tts.resetStopFlag();
     
     try {
       final repo = ref.read(notificationRepositoryProvider);
@@ -106,35 +118,36 @@ class TTSController extends StateNotifier<TTSState> {
       final important = notifications.where((n) => n.priority == 'high').toList();
       
       for (var notification in important) {
-        if (tts.isStopped) break;
+        if (tts.isStopped || state.currentContext != 'important_$appId') break;
         await _speakNotification(notification);
       }
     } finally {
-      state = state.copyWith(isPlaying: false);
+      if (state.currentContext == 'important_$appId') {
+        state = TTSState(isPlaying: false);
+      }
     }
   }
 
   Future<void> readAll() async {
-    if (state.isPlaying) return;
-    
-    state = state.copyWith(isPlaying: true);
+    await _stopCurrentAndStart('all_global');
     final tts = ref.read(ttsServiceProvider);
-    tts.resetStopFlag();
     
     try {
       final repo = ref.read(notificationRepositoryProvider);
       final apps = await repo.getAllApps();
       
       for (var app in apps) {
-        if (tts.isStopped) break;
+        if (tts.isStopped || state.currentContext != 'all_global') break;
         final notifications = await repo.getNotificationsByApp(app.id!);
         for (var notification in notifications) {
-          if (tts.isStopped) break;
+          if (tts.isStopped || state.currentContext != 'all_global') break;
           await _speakNotification(notification);
         }
       }
     } finally {
-      state = state.copyWith(isPlaying: false);
+      if (state.currentContext == 'all_global') {
+        state = TTSState(isPlaying: false);
+      }
     }
   }
 
@@ -148,6 +161,6 @@ class TTSController extends StateNotifier<TTSState> {
   Future<void> stop() async {
     final tts = ref.read(ttsServiceProvider);
     await tts.stop();
-    state = state.copyWith(isPlaying: false);
+    state = TTSState(isPlaying: false);
   }
 }

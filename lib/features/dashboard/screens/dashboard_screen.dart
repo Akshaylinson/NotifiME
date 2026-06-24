@@ -7,7 +7,7 @@ import '../../notifications/screens/permission_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 import '../../ai/summarizer/notification_summarizer.dart';
 import '../../ai/gemma/gemma_service.dart';
-import '../../audio/tts/supertonic_tts_service.dart';
+import '../../audio/tts/tts_provider.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../notifications/widgets/app_icon_widget.dart';
 
@@ -22,18 +22,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _isGeneratingSummary = false;
 
   Future<void> _generateGlobalSummary(BuildContext context) async {
-    // Set loading state
     setState(() {
       _isGeneratingSummary = true;
     });
 
     try {
-      // Get settings for voice and speech rate
-      final settings = ref.read(appSettingsProvider);
-      final voice = settings.voice;
-      final speechRate = settings.speechRate;
-
-      // Get all apps and their notifications
       final repository = NotificationRepository();
       final apps = await repository.getAllApps();
       
@@ -46,7 +39,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return;
       }
 
-      // Group notifications by app
       final notificationsByApp = <String, List<dynamic>>{};
       
       for (var app in apps) {
@@ -65,32 +57,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return;
       }
 
-      // Generate summary using AI
       final gemmaService = GemmaServiceImpl();
       await gemmaService.initialize();
       
       final summarizer = NotificationSummarizer(gemmaService);
-      
-      // Generate global summary (plain text, no emojis)
       final summary = await summarizer.summarizeGlobalByAppPlain(
         notificationsByApp.map((key, value) => MapEntry(key, value.cast())),
       );
 
       if (context.mounted) {
-        // Show brief confirmation
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Playing summary...'),
+            content: Text('Playing global summary...'),
             duration: Duration(seconds: 2),
           ),
         );
         
-        // Play audio directly using TTS with settings
-        final ttsService = SupertonicTTSService();
-        await ttsService.speak(
+        // Use centralized TTS controller - it will stop any playing audio automatically
+        await ref.read(ttsControllerProvider.notifier).readSummary(
           summary,
-          voice: voice,
-          speed: speechRate,
+          context: 'global_summary',
         );
       }
     } catch (e) {
@@ -100,7 +86,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         );
       }
     } finally {
-      // Reset loading state
       if (mounted) {
         setState(() {
           _isGeneratingSummary = false;

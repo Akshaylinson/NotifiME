@@ -450,33 +450,92 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusLg)),
-        title: Text('Retention period', style: AppTypography.headingMedium),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+        title: Row(
           children: [
-            Text('Notifications older than the chosen period will be automatically deleted.', style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary)),
-            const SizedBox(height: AppSpacing.lg),
-            DropdownButtonFormField<int>(
-              value: currentDays,
-              decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
-              items: const [
-                DropdownMenuItem(value: 7, child: Text('7 days')),
-                DropdownMenuItem(value: 14, child: Text('14 days')),
-                DropdownMenuItem(value: 30, child: Text('30 days')),
-                DropdownMenuItem(value: 60, child: Text('60 days')),
-                DropdownMenuItem(value: 90, child: Text('90 days')),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(appSettingsProvider.notifier).setRetentionDays(value);
-                  Navigator.pop(context);
-                }
-              },
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+              ),
+              child: const Icon(Icons.calendar_month_rounded, color: AppColors.primary, size: 24),
             ),
+            const SizedBox(width: AppSpacing.md),
+            Text('Retention Period', style: AppTypography.headingMedium.copyWith(color: AppColors.textPrimary)),
           ],
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Notifications older than the chosen period will be automatically deleted.',
+              style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            ...[7, 14, 30, 60, 90].map((days) {
+              final isSelected = days == currentDays;
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    ref.read(appSettingsProvider.notifier).setRetentionDays(days);
+                    Navigator.pop(context);
+                  },
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                      border: Border.all(
+                        color: isSelected ? AppColors.primary : AppColors.border,
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '$days days',
+                            style: AppTypography.bodyLarge.copyWith(
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                              color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        if (isSelected)
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.check, color: Colors.white, size: 16),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+            ),
+            child: const Text('Cancel'),
+          ),
+        ],
       ),
     );
   }

@@ -87,7 +87,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.sectionGap),
             _sectionHeader('Voice'),
             const SizedBox(height: AppSpacing.sm),
-            _voiceDropdown(ref, selectedVoice),
+            _voiceDropdown(context, ref, selectedVoice),
             const SizedBox(height: AppSpacing.sectionGap),
             _sectionHeader('Audio'),
             const SizedBox(height: AppSpacing.sm),
@@ -207,133 +207,142 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _voiceDropdown(WidgetRef ref, String currentVoiceId) {
+  Widget _voiceDropdown(BuildContext context, WidgetRef ref, String currentVoiceId) {
     final voicesAsync = ref.watch(availableVoicesProvider);
     final currentName = getHumanName(currentVoiceId);
     final description = _getVoiceDescription(currentVoiceId);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+    return voicesAsync.when(
+      data: (voices) {
+        return _tile(
+          context,
+          title: 'Voice selection',
+          subtitle: '$currentName - $description',
+          icon: Icons.record_voice_over_rounded,
+          onTap: () => _showVoiceSelectionDialog(context, ref, voices, currentVoiceId),
+        );
+      },
+      loading: () => _tile(
+        context,
+        title: 'Voice selection',
+        subtitle: 'Loading available voices...',
+        icon: Icons.record_voice_over_rounded,
+        onTap: () {},
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.cardPadding),
-          child: voicesAsync.when(
-            data: (voices) {
-              if (voices.isEmpty) {
-                return _voiceSelectionContent(currentName, description);
-              }
+      error: (_, __) => _tile(
+        context,
+        title: 'Voice selection',
+        subtitle: '$currentName - $description',
+        icon: Icons.record_voice_over_rounded,
+        onTap: () {},
+      ),
+    );
+  }
 
-              final sortedVoices = voices.toList()
-                ..sort((a, b) => getVoiceLabel(a).compareTo(getVoiceLabel(b)));
-              final selectedVoiceExists = sortedVoices.any((voice) => voice.id == currentVoiceId);
+  void _showVoiceSelectionDialog(BuildContext context, WidgetRef ref, List<VoiceModel> voices, String currentVoiceId) {
+    final sortedVoices = voices.toList()
+      ..sort((a, b) => getVoiceLabel(a).compareTo(getVoiceLabel(b)));
 
-              return ButtonTheme(
-                alignedDropdown: true,
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: selectedVoiceExists ? currentVoiceId : null,
-                    hint: _voiceSelectionContent(currentName, description),
-                    selectedItemBuilder: (context) => sortedVoices
-                        .map((_) => _voiceSelectionContent(currentName, description))
-                        .toList(),
-                    icon: const SizedBox.shrink(),
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                    dropdownColor: AppColors.cardBackground,
-                    onChanged: (value) {
-                      if (value != null) {
-                        ref.read(appSettingsProvider.notifier).setVoice(value);
-                      }
-                    },
-                    items: sortedVoices
-                        .map(
-                          (voice) => DropdownMenuItem<String>(
-                            value: voice.id,
-                            child: Text(
-                              getVoiceLabel(voice),
-                              style: TextStyle(
-                                fontWeight: voice.id == currentVoiceId ? FontWeight.w600 : FontWeight.w400,
-                                color: voice.id == currentVoiceId ? AppColors.primary : AppColors.textPrimary,
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusLg)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+              ),
+              child: const Icon(Icons.record_voice_over_rounded, color: AppColors.primary, size: 24),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Text('Select Voice', style: AppTypography.headingMedium.copyWith(color: AppColors.textPrimary)),
+          ],
+        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: sortedVoices.length,
+            separatorBuilder: (context, index) => Divider(color: AppColors.divider, height: 1),
+            itemBuilder: (context, index) {
+              final voice = sortedVoices[index];
+              final isSelected = voice.id == currentVoiceId;
+              final voiceName = getVoiceLabel(voice);
+              final voiceDesc = _getVoiceDescription(voice.id);
+              
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    ref.read(appSettingsProvider.notifier).setVoice(voice.id);
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.md,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.primary.withOpacity(0.05) : Colors.transparent,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                voiceName,
+                                style: AppTypography.bodyLarge.copyWith(
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                                ),
                               ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                              const SizedBox(height: 2),
+                              Text(
+                                voiceDesc,
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           ),
-                        )
-                        .toList(),
+                        ),
+                        if (isSelected)
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.check, color: Colors.white, size: 16),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               );
             },
-            loading: () => _voiceSelectionContent(currentName, 'Loading available voices...'),
-            error: (_, __) => _voiceSelectionContent(currentName, description),
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+            ),
+            child: const Text('Cancel'),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _voiceSelectionContent(String selectedName, String description) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-          ),
-          child: const Icon(Icons.record_voice_over_rounded, color: AppColors.primary, size: 20),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Voice selection',
-                style: AppTypography.bodyLarge.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                  fontSize: 12,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 1),
-              Text(
-                selectedName,
-                style: AppTypography.bodyLarge.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                  fontSize: 16,
-                  height: 1.3,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                description,
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                  fontSize: 11,
-                  height: 1.2,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
-      ],
-    );
-  }
 
   Widget _tile(BuildContext context, {required String title, required String subtitle, required IconData icon, required VoidCallback onTap, Widget? trailing, Color? iconColor, Color? titleColor}) {
     return Container(

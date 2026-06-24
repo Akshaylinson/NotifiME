@@ -203,7 +203,7 @@ class SettingsScreen extends ConsumerWidget {
     final currentName = getHumanName(currentVoiceId);
 
     return Container(
-      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
@@ -212,93 +212,134 @@ class SettingsScreen extends ConsumerWidget {
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.cardPadding),
-          child: voicesAsync.when(
-            data: (voices) {
-              if (voices.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.cardPadding),
-                  child: Text(
-                    currentName,
-                    style: AppTypography.bodyLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                );
-              }
-
-              final selectedVoiceExists = voices.any((voice) => voice.id == currentVoiceId);
-
-              return DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  isExpanded: true,
-                  value: selectedVoiceExists ? currentVoiceId : null,
-                  hint: Text(
-                    currentName,
-                    style: AppTypography.bodyLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  icon: const SizedBox.shrink(),
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                  dropdownColor: AppColors.cardBackground,
-                  style: AppTypography.bodyLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                  onChanged: (value) {
-                    if (value != null) {
-                      ref.read(appSettingsProvider.notifier).setVoice(value);
-                    }
-                  },
-                  items: () {
-                    final sortedVoices = voices.toList()
-                      ..sort((a, b) => getVoiceLabel(a).compareTo(getVoiceLabel(b)));
-                    return sortedVoices.map(
-                      (voice) => DropdownMenuItem<String>(
-                        value: voice.id,
-                        child: Text(
-                          getVoiceLabel(voice),
-                          style: TextStyle(
-                            fontWeight: voice.id == currentVoiceId ? FontWeight.w600 : FontWeight.w400,
-                            color: voice.id == currentVoiceId ? AppColors.primary : AppColors.textPrimary,
+          padding: const EdgeInsets.all(AppSpacing.cardPadding),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                ),
+                child: const Icon(Icons.record_voice_over_rounded, color: AppColors.primary, size: 20),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: voicesAsync.when(
+                  data: (voices) {
+                    if (voices.isEmpty) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Voice selection',
+                            style: AppTypography.bodyLarge.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
-                          overflow: TextOverflow.ellipsis,
+                          const SizedBox(height: 2),
+                          Text(
+                            currentName,
+                            style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                          ),
+                        ],
+                      );
+                    }
+
+                    final selectedVoiceExists = voices.any((voice) => voice.id == currentVoiceId);
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Voice selection',
+                          style: AppTypography.bodyLarge.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            value: selectedVoiceExists ? currentVoiceId : null,
+                            hint: Text(
+                              currentName,
+                              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            icon: const SizedBox.shrink(),
+                            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                            dropdownColor: AppColors.cardBackground,
+                            style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                            onChanged: (value) {
+                              if (value != null) {
+                                ref.read(appSettingsProvider.notifier).setVoice(value);
+                              }
+                            },
+                            items: () {
+                              final sortedVoices = voices.toList()
+                                ..sort((a, b) => getVoiceLabel(a).compareTo(getVoiceLabel(b)));
+                              return sortedVoices.map(
+                                (voice) => DropdownMenuItem<String>(
+                                  value: voice.id,
+                                  child: Text(
+                                    getVoiceLabel(voice),
+                                    style: TextStyle(
+                                      fontWeight: voice.id == currentVoiceId ? FontWeight.w600 : FontWeight.w400,
+                                      color: voice.id == currentVoiceId ? AppColors.primary : AppColors.textPrimary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ).toList();
+                            }(),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                  loading: () => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Voice selection',
+                        style: AppTypography.bodyLarge.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
                         ),
                       ),
-                    ).toList();
-                  }(),
+                      const SizedBox(height: 2),
+                      Text(
+                        currentName,
+                        style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                  error: (_, __) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Voice selection',
+                        style: AppTypography.bodyLarge.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        currentName,
+                        style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
                 ),
-              );
-            },
-            loading: () => Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.cardPadding),
-              child: Text(
-                currentName,
-                style: AppTypography.bodyLarge.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            error: (_, __) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.cardPadding),
-              child: Text(
-                currentName,
-                style: AppTypography.bodyLarge.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+              const SizedBox(width: AppSpacing.sm),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+            ],
           ),
         ),
       ),

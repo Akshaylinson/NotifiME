@@ -9,6 +9,33 @@ import '../../settings/providers/settings_provider.dart';
 import '../../audio/tts/voice_provider.dart';
 import '../../audio/tts/voice_service.dart';
 
+// Mapping voice model IDs to human-readable names
+const Map<String, String> voiceHumanNames = {
+  // Female voices
+  'F1': 'Emma - Warm & Friendly',
+  'F2': 'Sarah - Natural & Clear',
+  'F3': 'Rachel - Professional',
+  'F4': 'Jenny - Casual',
+  'F5': 'Amy - Expressive',
+  'F6': 'Ada - Modern',
+  'F7': 'Bella - Soft Spoken',
+  'F8': 'Grace - Elegant',
+  // Male voices  
+  'M1': 'James - Deep & Authoritative',
+  'M2': 'John - Natural & Clear',
+  'M3': 'Michael - Professional',
+  'M4': 'David - Conversational',
+  'M5': 'Robert - Confident',
+  'M6': 'William - Warm',
+  'M7': 'Thomas - Mature',
+  'M8': 'Charles - Dynamic',
+  // Additional voices
+  'F9': 'Lily - Cheerful',
+  'F10': 'Victoria - Sophisticated',
+  'M9': 'Alexander - Bold',
+  'M10': 'Benjamin - Friendly',
+};
+
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -667,10 +694,30 @@ class SettingsScreen extends ConsumerWidget {
 class VoiceSelectionDialog extends ConsumerWidget {
   const VoiceSelectionDialog({super.key});
 
+  String _getHumanName(String voiceId) {
+    return voiceHumanNames[voiceId] ?? voiceId;
+  }
+
+  Widget _buildVoiceGroup(String title, List<VoiceModel> voices, String selectedVoice) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _VoiceGroupHeader(title),
+        const SizedBox(height: AppSpacing.sm),
+        ...voices.map((voice) => _VoiceTile(
+          voice: voice, 
+          selectedVoice: selectedVoice,
+          humanName: _getHumanName(voice.id),
+        )),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final voicesAsync = ref.watch(availableVoicesProvider);
     final selectedVoice = ref.watch(selectedVoiceProvider);
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Dialog(
       backgroundColor: AppColors.background,
@@ -678,9 +725,10 @@ class VoiceSelectionDialog extends ConsumerWidget {
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
       ),
       child: Container(
+        width: screenWidth * 0.9,
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.8,
-          maxWidth: 520,
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+          maxWidth: 600,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -745,25 +793,16 @@ class VoiceSelectionDialog extends ConsumerWidget {
                   return ListView(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     children: [
-                      if (maleVoices.isNotEmpty) ...[
-                        const _VoiceGroupHeader('Male voices'),
-                        const SizedBox(height: AppSpacing.sm),
-                        ...maleVoices
-                            .map((voice) => _VoiceTile(voice: voice, selectedVoice: selectedVoice)),
+                      if (femaleVoices.isNotEmpty) ...[
+                        _buildVoiceGroup('Female Voices', femaleVoices, selectedVoice),
                         const SizedBox(height: AppSpacing.lg),
                       ],
-                      if (femaleVoices.isNotEmpty) ...[
-                        const _VoiceGroupHeader('Female voices'),
-                        const SizedBox(height: AppSpacing.sm),
-                        ...femaleVoices
-                            .map((voice) => _VoiceTile(voice: voice, selectedVoice: selectedVoice)),
+                      if (maleVoices.isNotEmpty) ...[
+                        _buildVoiceGroup('Male Voices', maleVoices, selectedVoice),
                         const SizedBox(height: AppSpacing.lg),
                       ],
                       if (otherVoices.isNotEmpty) ...[
-                        const _VoiceGroupHeader('Other voices'),
-                        const SizedBox(height: AppSpacing.sm),
-                        ...otherVoices
-                            .map((voice) => _VoiceTile(voice: voice, selectedVoice: selectedVoice)),
+                        _buildVoiceGroup('Other Voices', otherVoices, selectedVoice),
                       ],
                     ],
                   );
@@ -813,21 +852,34 @@ class VoiceSelectionDialog extends ConsumerWidget {
 class _VoiceTile extends ConsumerWidget {
   final VoiceModel voice;
   final String selectedVoice;
+  final String? humanName;
 
-  const _VoiceTile({required this.voice, required this.selectedVoice});
+  const _VoiceTile({
+    required this.voice, 
+    required this.selectedVoice,
+    this.humanName,
+  });
+
+  String _getHumanName(String voiceId) {
+    return voiceHumanNames[voiceId] ?? voiceId;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSelected = voice.id == selectedVoice;
+    final displayName = humanName ?? _getHumanName(voice.id);
+    final voiceType = voice.gender == 'Female' ? '👩' : (voice.gender == 'Male' ? '👨' : '🎤');
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: isSelected 
+            ? AppColors.primary.withOpacity(0.08)
+            : AppColors.cardBackground,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
         border: Border.all(
           color: isSelected ? AppColors.primary : AppColors.border,
-          width: isSelected ? 1.5 : 1,
+          width: isSelected ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
@@ -850,19 +902,22 @@ class _VoiceTile extends ConsumerWidget {
             child: Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primary.withOpacity(0.12)
+                    gradient: isSelected 
+                        ? AppColors.primaryGradient 
+                        : null,
+                    color: isSelected 
+                        ? null 
                         : AppColors.background,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                   ),
-                  child: Icon(
-                    isSelected
-                        ? Icons.radio_button_checked_rounded
-                        : Icons.radio_button_off_rounded,
-                    color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                  child: Center(
+                    child: Text(
+                      voiceType,
+                      style: const TextStyle(fontSize: 22),
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -871,14 +926,15 @@ class _VoiceTile extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        voice.name.isNotEmpty ? voice.name : voice.id,
+                        displayName,
                         style: AppTypography.bodyLarge.copyWith(
                           fontWeight: FontWeight.w600,
+                          color: isSelected ? AppColors.primary : AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${voice.id}  ${voice.gender}  ${voice.language}',
+                        voice.id,
                         style: AppTypography.bodySmall.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -888,20 +944,24 @@ class _VoiceTile extends ConsumerWidget {
                 ),
                 if (isSelected)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: 4,
-                    ),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+                      gradient: AppColors.primaryGradient,
+                      shape: BoxShape.circle,
                     ),
-                    child: Text(
-                      'Selected',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  )
+                else
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.border, width: 2),
                     ),
                   ),
               ],

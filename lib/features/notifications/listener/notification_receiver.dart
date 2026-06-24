@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repository/notification_repository.dart';
 import '../repository/notification_provider.dart';
+import '../providers/daily_counter_provider.dart';
 import '../models/notification_model.dart';
 import '../models/app_model.dart';
 import '../processors/priority_processor.dart';
@@ -97,6 +98,9 @@ class NotificationReceiver {
 
       await _repository.insertNotification(notification);
       developer.log('Notification saved successfully!');
+
+      // Increment daily counter
+      _container.read(dailyNotificationCounterProvider.notifier).increment();
 
       // 6. Refresh UI - Dashboard
       _container.read(appListProvider.notifier).refresh();

@@ -10,6 +10,7 @@ import '../../ai/gemma/gemma_service.dart';
 import '../../audio/tts/tts_provider.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../notifications/widgets/app_icon_widget.dart';
+import '../widgets/daily_notification_card.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -177,9 +178,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               )
             : ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                itemCount: apps.length,
+                itemCount: apps.length + 1,
                 itemBuilder: (context, index) {
-                  final app = apps[index];
+                  if (index == 0) {
+                    return const DailyNotificationCard();
+                  }
+                  final app = apps[index - 1];
                   return Container(
                     margin: const EdgeInsets.only(bottom: 10),
                     decoration: BoxDecoration(

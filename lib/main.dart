@@ -15,24 +15,41 @@ import 'features/settings/providers/settings_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final container = ProviderContainer();
-  final repository = container.read(notificationRepositoryProvider);
-  final receiver = NotificationReceiver(repository, container);
-  receiver.startListening();
+  try {
+    final container = ProviderContainer();
+    final repository = container.read(notificationRepositoryProvider);
+    final receiver = NotificationReceiver(repository, container);
+    receiver.startListening();
 
-  // Load settings and cleanup old notifications
-  await container.read(appSettingsProvider.notifier).initializeAndCleanup();
+    // Load settings and cleanup old notifications
+    await container.read(appSettingsProvider.notifier).initializeAndCleanup();
 
-  // Initialize retention policy background service
-  final retentionService = RetentionPolicyService();
-  await retentionService.initialize();
+    // Initialize retention policy background service
+    final retentionService = RetentionPolicyService();
+    await retentionService.initialize();
 
-  runApp(
-    UncontrolledProviderScope(
-      container: container,
-      child: const AINotificationAssistant(),
-    ),
-  );
+    runApp(
+      UncontrolledProviderScope(
+        container: container,
+        child: const AINotificationAssistant(),
+      ),
+    );
+  } catch (e, stack) {
+    debugPrint('Error in main: $e');
+    debugPrint('Stack trace: $stack');
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text('Error starting app: $e'),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class AINotificationAssistant extends ConsumerWidget {

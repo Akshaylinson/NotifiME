@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../notifications/repository/notification_provider.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../audio/tts/voice_provider.dart';
@@ -15,55 +18,52 @@ class SettingsScreen extends ConsumerWidget {
     final settings = ref.watch(appSettingsProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         elevation: 0,
-        title: ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
-            ],
-          ).createShader(bounds),
-          child: const Text(
-            'Settings',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              letterSpacing: 0.5,
-            ),
+        backgroundColor: AppColors.background,
+        title: Text(
+          'Settings',
+          style: AppTypography.headingMedium.copyWith(
+            color: AppColors.primary,
           ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenPadding,
+            AppSpacing.md,
+            AppSpacing.screenPadding,
+            100,
+          ),
           children: [
-            _heroCard(context, settings, selectedVoice),
-            const SizedBox(height: 24),
-            _sectionHeader(context, 'Voice'),
-            const SizedBox(height: 12),
+            _heroCard(settings, selectedVoice),
+            const SizedBox(height: AppSpacing.sectionGap),
+            _sectionHeader('Voice'),
+            const SizedBox(height: AppSpacing.sm),
             _tile(
-              context,
               title: 'Voice selection',
               subtitle: selectedVoice,
               icon: Icons.record_voice_over_rounded,
               onTap: () => _showVoiceSelectionDialog(context, ref),
             ),
-            const SizedBox(height: 24),
-            _sectionHeader(context, 'Audio'),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sectionGap),
+            _sectionHeader('Audio'),
+            const SizedBox(height: AppSpacing.sm),
             _switchTile(
-              context,
               title: 'Auto-read notifications',
               subtitle: 'Automatically speak new notifications when they arrive',
               icon: Icons.volume_up_rounded,
               value: settings.autoRead,
               onChanged: (val) => ref.read(appSettingsProvider.notifier).setAutoRead(val),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.cardGap),
             _sliderTile(
-              context,
               title: 'Speech speed',
               subtitle: 'Adjust how fast summaries are spoken',
               icon: Icons.speed_rounded,
@@ -74,9 +74,8 @@ class SettingsScreen extends ConsumerWidget {
               divisions: 15,
               onChanged: (val) => ref.read(appSettingsProvider.notifier).setSpeechRate(val),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.cardGap),
             _sliderTile(
-              context,
               title: 'Voice pitch',
               subtitle: 'Tune the tone of spoken notifications',
               icon: Icons.graphic_eq_rounded,
@@ -87,33 +86,30 @@ class SettingsScreen extends ConsumerWidget {
               divisions: 15,
               onChanged: (val) => ref.read(appSettingsProvider.notifier).setPitch(val),
             ),
-            const SizedBox(height: 24),
-            _sectionHeader(context, 'Storage'),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sectionGap),
+            _sectionHeader('Storage'),
+            const SizedBox(height: AppSpacing.sm),
             _tile(
-              context,
               title: 'Retention period',
               subtitle: '${settings.retentionDays} days',
               icon: Icons.calendar_month_rounded,
               onTap: () => _showRetentionDialog(context, ref, settings.retentionDays),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.cardGap),
             _tile(
-              context,
               title: 'Run cleanup now',
               subtitle: 'Delete notifications older than the selected retention period',
               icon: Icons.cleaning_services_rounded,
               onTap: () => _runManualCleanup(context, ref),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.cardGap),
             _tile(
-              context,
               title: 'Clear all notifications',
               subtitle: 'Remove every stored notification from the database',
               icon: Icons.delete_forever_rounded,
-              iconColor: Theme.of(context).colorScheme.error,
-              titleColor: Theme.of(context).colorScheme.error,
-              trailing: Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.error),
+              iconColor: AppColors.error,
+              titleColor: AppColors.error,
+              trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.error),
               onTap: () => _showClearConfirmationDialog(context, ref),
             ),
           ],
@@ -122,126 +118,106 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _heroCard(BuildContext context, AppSettings settings, String selectedVoice) {
+  Widget _heroCard(AppSettings settings, String selectedVoice) {
     return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: AppColors.primary.withOpacity(0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Card(
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-            width: 1,
-          ),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.secondary,
-              ],
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             ),
-            borderRadius: BorderRadius.circular(16),
+            child: const Icon(
+              Icons.tune_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(14),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Personalize your assistant',
+                  style: AppTypography.headingMedium.copyWith(
+                    color: Colors.white,
+                  ),
                 ),
-                child: Icon(Icons.tune_rounded, color: Colors.white, size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 4),
+                Text(
+                  'Voice, speech, and storage options for Notiva AI',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
                   children: [
-                    Text(
-                      'Personalize your assistant',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Voice, speech, and storage options for Notiva AI',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _chip('Voice: $selectedVoice'),
-                        _chip('Auto-read: ${settings.autoRead ? 'On' : 'Off'}'),
-                        _chip('Retention: ${settings.retentionDays}d'),
-                      ],
-                    ),
+                    _chip('Voice: $selectedVoice'),
+                    _chip('Auto-read: ${settings.autoRead ? 'On' : 'Off'}'),
+                    _chip('Retention: ${settings.retentionDays}d'),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _chip(String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.14),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
         border: Border.all(color: Colors.white.withOpacity(0.18)),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
+        style: AppTypography.labelSmall.copyWith(
           color: Colors.white,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 
-  Widget _sectionHeader(BuildContext context, String title) {
+  Widget _sectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 4),
+      padding: const EdgeInsets.only(left: AppSpacing.xs, bottom: AppSpacing.xs),
       child: Text(
         title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
+        style: AppTypography.labelSmall.copyWith(
           letterSpacing: 1.2,
-          color: Theme.of(context).colorScheme.outline,
+          color: AppColors.textTertiary,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
   }
 
-  Widget _tile(
-    BuildContext context, {
+  Widget _tile({
     required String title,
     required String subtitle,
     required IconData icon,
@@ -250,73 +226,67 @@ class SettingsScreen extends ConsumerWidget {
     Color? iconColor,
     Color? titleColor,
   }) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Card(
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-            width: 1,
-          ),
-        ),
+      child: Material(
+        color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(AppSpacing.cardPadding),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
-                    color: (iconColor ?? primaryColor).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    color: (iconColor ?? AppColors.primary).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                   ),
-                  child: Icon(icon, color: iconColor ?? primaryColor, size: 22),
+                  child: Icon(
+                    icon,
+                    color: iconColor ?? AppColors.primary,
+                    size: 20,
+                  ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: TextStyle(
-                          fontSize: 16,
+                        style: AppTypography.bodyLarge.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: titleColor ?? Theme.of(context).colorScheme.onSurface,
+                          color: titleColor ?? AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                trailing ?? Icon(
+                const SizedBox(width: AppSpacing.sm),
+                trailing ?? const Icon(
                   Icons.chevron_right_rounded,
-                  color: Theme.of(context).colorScheme.outline,
-                  size: 20,
+                  color: AppColors.textSecondary,
                 ),
               ],
             ),
@@ -326,92 +296,27 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _switchTile(
-    BuildContext context, {
+  Widget _switchTile({
     required String title,
     required String subtitle,
     required IconData icon,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    return _tile(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      trailing: Switch.adaptive(
+        value: value,
+        activeColor: AppColors.primary,
+        onChanged: onChanged,
       ),
-      child: Card(
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-            width: 1,
-          ),
-        ),
-        child: InkWell(
-          onTap: () => onChanged(!value),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(icon, color: primaryColor, size: 22),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Switch.adaptive(
-                  value: value,
-                  activeColor: primaryColor,
-                  onChanged: onChanged,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      onTap: () => onChanged(!value),
     );
   }
 
-  Widget _sliderTile(
-    BuildContext context, {
+  Widget _sliderTile({
     required String title,
     required String subtitle,
     required IconData icon,
@@ -422,110 +327,92 @@ class SettingsScreen extends ConsumerWidget {
     required int divisions,
     required ValueChanged<double> onChanged,
   }) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Card(
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-            width: 1,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(icon, color: primaryColor, size: 22),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context).colorScheme.primaryContainer,
-                          Theme.of(context).colorScheme.secondaryContainer,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      valueLabel,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  activeTrackColor: primaryColor,
-                  inactiveTrackColor: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                  thumbColor: primaryColor,
-                  overlayColor: primaryColor.withOpacity(0.12),
-                  trackHeight: 4,
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                 ),
-                child: Slider(
-                  value: value,
-                  min: min,
-                  max: max,
-                  divisions: divisions,
-                  onChanged: onChanged,
+                child: Icon(icon, color: AppColors.primary, size: 20),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTypography.bodyLarge.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusXs),
+                ),
+                child: Text(
+                  valueLabel,
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: AppSpacing.md),
+          SliderTheme(
+            data: SliderThemeData(
+              activeTrackColor: AppColors.primary,
+              inactiveTrackColor: AppColors.divider,
+              thumbColor: AppColors.primary,
+              overlayColor: AppColors.primary.withOpacity(0.12),
+              trackHeight: 4,
+            ),
+            child: Slider(
+              value: value,
+              min: min,
+              max: max,
+              divisions: divisions,
+              onChanged: onChanged,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -541,20 +428,27 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Retention period'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        ),
+        title: Text('Retention period', style: AppTypography.headingMedium),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Notifications older than the chosen period will be automatically deleted.',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
             DropdownButtonFormField<int>(
               value: currentDays,
-              decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
               items: const [
                 DropdownMenuItem(value: 7, child: Text('7 days')),
                 DropdownMenuItem(value: 14, child: Text('14 days')),
@@ -572,7 +466,10 @@ class SettingsScreen extends ConsumerWidget {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
         ],
       ),
     );
@@ -582,18 +479,31 @@ class SettingsScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        icon: Icon(Icons.cleaning_services_rounded, color: Theme.of(context).colorScheme.primary, size: 48),
-        title: const Text('Run cleanup now'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        ),
+        icon: const Icon(
+          Icons.cleaning_services_rounded,
+          color: AppColors.primary,
+          size: 48,
+        ),
+        title: Text('Run cleanup now', style: AppTypography.headingMedium),
         content: Text(
           'This will delete all notifications older than ${ref.read(appSettingsProvider).retentionDays} days.\n\nDo you want to continue?',
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+          style: AppTypography.bodyMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+            ),
             child: const Text('Run Cleanup'),
           ),
         ],
@@ -606,15 +516,17 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
-              const SizedBox(height: 16),
-              const Text('Running cleanup...'),
+              CircularProgressIndicator(color: AppColors.primary),
+              SizedBox(height: AppSpacing.md),
+              Text('Running cleanup...'),
             ],
           ),
         ),
@@ -632,10 +544,12 @@ class SettingsScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Cleanup completed successfully'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
+            backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            ),
+            margin: const EdgeInsets.all(AppSpacing.lg),
           ),
         );
       }
@@ -645,10 +559,12 @@ class SettingsScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Cleanup failed: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            ),
+            margin: const EdgeInsets.all(AppSpacing.lg),
           ),
         );
       }
@@ -659,21 +575,34 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        icon: Icon(Icons.warning_amber_rounded, color: Theme.of(context).colorScheme.error, size: 48),
-        title: const Text('Clear all notifications'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        ),
+        icon: const Icon(
+          Icons.warning_amber_rounded,
+          color: AppColors.warning,
+          size: 48,
+        ),
+        title: Text('Clear all notifications', style: AppTypography.headingMedium),
         content: Text(
           'This will permanently delete all notifications from the database. This action cannot be undone.\n\nAre you sure you want to continue?',
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+          style: AppTypography.bodyMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () async {
               Navigator.pop(context);
               await _clearAllNotifications(context, ref);
             },
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
             child: const Text('Delete All'),
           ),
         ],
@@ -686,15 +615,17 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
-              const SizedBox(height: 16),
-              const Text('Clearing notifications...'),
+              CircularProgressIndicator(color: AppColors.primary),
+              SizedBox(height: AppSpacing.md),
+              Text('Clearing notifications...'),
             ],
           ),
         ),
@@ -714,10 +645,12 @@ class SettingsScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('All notifications cleared successfully'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
+            backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            ),
+            margin: const EdgeInsets.all(AppSpacing.lg),
           ),
         );
       }
@@ -727,10 +660,12 @@ class SettingsScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error clearing notifications: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            ),
+            margin: const EdgeInsets.all(AppSpacing.lg),
           ),
         );
       }
@@ -745,109 +680,130 @@ class VoiceSelectionDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final voicesAsync = ref.watch(availableVoicesProvider);
     final selectedVoice = ref.watch(selectedVoiceProvider);
-    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Dialog(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: AppColors.background,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      ),
       child: Container(
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8, maxWidth: 520),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+          maxWidth: 520,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(AppSpacing.sm),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context).colorScheme.primary,
-                          Theme.of(context).colorScheme.secondary,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(10),
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                     ),
-                    child: const Icon(Icons.record_voice_over_rounded, size: 22, color: Colors.white),
+                    child: const Icon(
+                      Icons.record_voice_over_rounded,
+                      size: 22,
+                      color: Colors.white,
+                    ),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Select voice', style: Theme.of(context).textTheme.titleLarge),
+                        Text('Select voice', style: AppTypography.headingMedium),
                         Text(
                           'Choose the voice used for spoken summaries',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(context)),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(context),
+                  ),
                 ],
               ),
             ),
-            Divider(height: 1, color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
+            Divider(
+              height: 1,
+              color: AppColors.border,
+            ),
             Expanded(
               child: voicesAsync.when(
                 data: (voices) {
                   if (voices.isEmpty) {
-                    return const Center(child: Text('No voices available'));
+                    return const Center(
+                      child: Text('No voices available'),
+                    );
                   }
 
                   final maleVoices = voices.where((v) => v.gender == 'Male').toList();
                   final femaleVoices = voices.where((v) => v.gender == 'Female').toList();
-                  final otherVoices = voices.where((v) => v.gender != 'Male' && v.gender != 'Female').toList();
+                  final otherVoices = voices
+                      .where((v) => v.gender != 'Male' && v.gender != 'Female')
+                      .toList();
 
                   return ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.lg),
                     children: [
                       if (maleVoices.isNotEmpty) ...[
                         const _VoiceGroupHeader('Male voices'),
-                        const SizedBox(height: 8),
-                        ...maleVoices.map((voice) => _VoiceTile(voice: voice, selectedVoice: selectedVoice)),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: AppSpacing.sm),
+                        ...maleVoices
+                            .map((voice) => _VoiceTile(voice: voice, selectedVoice: selectedVoice)),
+                        const SizedBox(height: AppSpacing.lg),
                       ],
                       if (femaleVoices.isNotEmpty) ...[
                         const _VoiceGroupHeader('Female voices'),
-                        const SizedBox(height: 8),
-                        ...femaleVoices.map((voice) => _VoiceTile(voice: voice, selectedVoice: selectedVoice)),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: AppSpacing.sm),
+                        ...femaleVoices
+                            .map((voice) => _VoiceTile(voice: voice, selectedVoice: selectedVoice)),
+                        const SizedBox(height: AppSpacing.lg),
                       ],
                       if (otherVoices.isNotEmpty) ...[
                         const _VoiceGroupHeader('Other voices'),
-                        const SizedBox(height: 8),
-                        ...otherVoices.map((voice) => _VoiceTile(voice: voice, selectedVoice: selectedVoice)),
+                        const SizedBox(height: AppSpacing.sm),
+                        ...otherVoices
+                            .map((voice) => _VoiceTile(voice: voice, selectedVoice: selectedVoice)),
                       ],
                     ],
                   );
                 },
-                loading: () => Center(
+                loading: () => const Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: CircularProgressIndicator(color: primaryColor),
+                    padding: EdgeInsets.all(AppSpacing.xl),
+                    child: CircularProgressIndicator(color: AppColors.primary),
                   ),
                 ),
                 error: (err, stack) => Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(32),
+                    padding: const EdgeInsets.all(AppSpacing.xl),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline_rounded, size: 48, color: Theme.of(context).colorScheme.error),
-                        const SizedBox(height: 16),
-                        Text('Failed to load voices', style: Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 4),
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          size: 48,
+                          color: AppColors.error,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'Failed to load voices',
+                          style: AppTypography.headingSmall,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           'Using default voices',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -872,67 +828,68 @@ class _VoiceTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSelected = voice.id == selectedVoice;
-    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        border: Border.all(
+          color: isSelected ? AppColors.primary : AppColors.border,
+          width: isSelected ? 1.5 : 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Card(
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(
-            color: isSelected ? primaryColor : Theme.of(context).colorScheme.outline.withOpacity(0.1),
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
+      child: Material(
+        color: Colors.transparent,
         child: InkWell(
           onTap: () async {
             await ref.read(appSettingsProvider.notifier).setVoice(voice.id);
             if (context.mounted) Navigator.pop(context);
           },
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.cardPadding),
             child: Row(
               children: [
                 Container(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: isSelected ? primaryColor.withOpacity(0.12) : Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(10),
+                    color: isSelected
+                        ? AppColors.primary.withOpacity(0.12)
+                        : AppColors.background,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                   ),
                   child: Icon(
-                    isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-                    color: isSelected ? primaryColor : Theme.of(context).colorScheme.outline,
+                    isSelected
+                        ? Icons.radio_button_checked_rounded
+                        : Icons.radio_button_off_rounded,
+                    color: isSelected ? AppColors.primary : AppColors.textTertiary,
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         voice.name.isNotEmpty ? voice.name : voice.id,
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        style: AppTypography.bodyLarge.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${voice.id}  ${voice.gender}  ${voice.language}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -940,22 +897,19 @@ class _VoiceTile extends ConsumerWidget {
                 ),
                 if (isSelected)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context).colorScheme.primaryContainer,
-                          Theme.of(context).colorScheme.secondaryContainer,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(10),
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
                     ),
                     child: Text(
                       'Selected',
-                      style: TextStyle(
-                        fontSize: 11,
+                      style: AppTypography.labelSmall.copyWith(
+                        color: AppColors.primary,
                         fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
                       ),
                     ),
                   ),
@@ -976,14 +930,13 @@ class _VoiceGroupHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 12,
+        style: AppTypography.labelSmall.copyWith(
+          color: AppColors.textSecondary,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
-          color: Theme.of(context).colorScheme.outline,
         ),
       ),
     );

@@ -489,16 +489,16 @@ Settings → Apps → Special app access → Notification access → Notiva AI �
 <div align="center">
 
 ### Dashboard
-<img src="screenshots/dashboard.png" width="250" alt="Dashboard" />
+<img src="screenshots/dashbaord.jpg" width="250" alt="Dashboard" />
 
 ### Notification Details
-<img src="screenshots/details.png" width="250" alt="Details" />
+<img src="screenshots/details.jpg" width="250" alt="Details" />
 
 ### AI Summary
-<img src="screenshots/summary.png" width="250" alt="Summary" />
+<img src="screenshots/summary.jpg" width="250" alt="Summary" />
 
 ### Settings
-<img src="screenshots/settings.png" width="250" alt="Settings" />
+<img src="screenshots/settings.jpg" width="250" alt="Settings" />
 
 </div>
 

@@ -37,6 +37,10 @@ String getHumanName(String voiceId) {
   return voiceHumanNames[voiceId] ?? voiceId;
 }
 
+String getVoiceLabel(VoiceModel voice) {
+  return voiceHumanNames[voice.id] ?? voice.name;
+}
+
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -197,8 +201,9 @@ class SettingsScreen extends ConsumerWidget {
   Widget _voiceDropdown(WidgetRef ref, String currentVoiceId) {
     final voicesAsync = ref.watch(availableVoicesProvider);
     final currentName = getHumanName(currentVoiceId);
-    
+
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
@@ -209,41 +214,91 @@ class SettingsScreen extends ConsumerWidget {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.cardPadding),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
-                child: const Icon(Icons.record_voice_over_rounded, color: AppColors.primary, size: 20),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Voice selection', style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                    const SizedBox(height: 2),
-                    Text(currentName, style: AppTypography.bodySmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500)),
-                  ],
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.cardPadding),
+          child: voicesAsync.when(
+            data: (voices) {
+              if (voices.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.cardPadding),
+                  child: Text(
+                    currentName,
+                    style: AppTypography.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }
+
+              final selectedVoiceExists = voices.any((voice) => voice.id == currentVoiceId);
+
+              return DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  value: selectedVoiceExists ? currentVoiceId : null,
+                  hint: Text(
+                    currentName,
+                    style: AppTypography.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  icon: const SizedBox.shrink(),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                  dropdownColor: AppColors.cardBackground,
+                  style: AppTypography.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref.read(appSettingsProvider.notifier).setVoice(value);
+                    }
+                  },
+                  items: () {
+                    final sortedVoices = voices.toList()
+                      ..sort((a, b) => getVoiceLabel(a).compareTo(getVoiceLabel(b)));
+                    return sortedVoices.map(
+                      (voice) => DropdownMenuItem<String>(
+                        value: voice.id,
+                        child: Text(
+                          getVoiceLabel(voice),
+                          style: TextStyle(
+                            fontWeight: voice.id == currentVoiceId ? FontWeight.w600 : FontWeight.w400,
+                            color: voice.id == currentVoiceId ? AppColors.primary : AppColors.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ).toList();
+                  }(),
                 ),
+              );
+            },
+            loading: () => Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.cardPadding),
+              child: Text(
+                currentName,
+                style: AppTypography.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-              voicesAsync.when(
-                data: (voices) {
-                  if (voices.isEmpty) return const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary);
-                  return PopupMenuButton<String>(
-                    onSelected: (value) => ref.read(appSettingsProvider.notifier).setVoice(value),
-                    itemBuilder: (context) => voices.map((voice) => PopupMenuItem<String>(
-                      value: voice.id,
-                      child: Text(getHumanName(voice.id), style: TextStyle(fontWeight: voice.id == currentVoiceId ? FontWeight.w600 : FontWeight.w400, color: voice.id == currentVoiceId ? AppColors.primary : AppColors.textPrimary)),
-                    )).toList(),
-                    child: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.textSecondary),
-                  );
-                },
-                loading: () => const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
-                error: (_, __) => const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+            ),
+            error: (_, __) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.cardPadding),
+              child: Text(
+                currentName,
+                style: AppTypography.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
+            ),
           ),
         ),
       ),

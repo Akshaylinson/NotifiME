@@ -4,8 +4,14 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
-    namespace = "com.example.notifime"
+    namespace = "com.notivaai.notifications"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -19,20 +25,34 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.notifime"
+        applicationId = "com.notivaai.notifications"
         minSdk = 24
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        versionCode = 1
+        versionName = "1.0.0"
     }
 
     androidResources {
         noCompress += "bin"
     }
 
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            release {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                storePassword keystoreProperties['storePassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

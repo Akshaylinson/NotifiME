@@ -7,9 +7,16 @@ import io.flutter.plugin.common.MethodChannel
 
 class NotificationListener : NotificationListenerService() {
     private val TAG = "NotificationListener"
+    private lateinit var dbHelper: NotificationDatabaseHelper
 
     companion object {
         var staticChannel: MethodChannel? = null
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        dbHelper = NotificationDatabaseHelper(applicationContext)
+        Log.d(TAG, "NotificationListener service created with database")
     }
 
     override fun onListenerConnected() {
@@ -50,16 +57,37 @@ class NotificationListener : NotificationListenerService() {
             "iconPath" to iconPath
         )
 
+        // Try sending to Flutter first (if app is open)
         val channel = staticChannel
+        var sentToFlutter = false
+        
         if (channel != null) {
             try {
                 channel.invokeMethod("onNotificationReceived", data)
                 Log.d(TAG, "Sent to Flutter: ${getAppName(packageName)}")
+                sentToFlutter = true
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to send notification to Flutter: ${e.message}", e)
+                Log.e(TAG, "Failed to send to Flutter: ${e.message}")
             }
+        }
+        
+        // Always save to database directly (works even if app is closed)
+        if (!sentToFlutter) {
+            Log.d(TAG, "Flutter unavailable, saving directly to database")
+        }
+        
+        val saved = dbHelper.saveNotification(
+            packageName = packageName,
+            appName = getAppName(packageName),
+            title = title,
+            message = message,
+            iconPath = iconPath
+        )
+        
+        if (saved) {
+            Log.d(TAG, "✓ Notification saved to database: ${getAppName(packageName)}")
         } else {
-            Log.w(TAG, "MethodChannel is null; notification was not forwarded to Flutter")
+            Log.e(TAG, "✗ Failed to save notification to database")
         }
     }
 

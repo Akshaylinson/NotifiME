@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
@@ -63,12 +64,37 @@ class AppInitializer extends ConsumerStatefulWidget {
 }
 
 class _AppInitializerState extends ConsumerState<AppInitializer> with WidgetsBindingObserver {
+  static const MethodChannel _channel = MethodChannel('com.example.notifime/notifications');
+
   bool _showPermissionScreen = true;
+  bool _isCheckingPermission = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _syncPermissionState();
+  }
+
+  Future<void> _syncPermissionState() async {
+    final isEnabled = await _isNotificationListenerEnabled();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _showPermissionScreen = !isEnabled;
+      _isCheckingPermission = false;
+    });
+  }
+
+  Future<bool> _isNotificationListenerEnabled() async {
+    try {
+      final enabled = await _channel.invokeMethod<bool>('isNotificationListenerEnabled');
+      return enabled ?? false;
+    } catch (e) {
+      return false;
+    }
   }
 
   @override
@@ -81,9 +107,7 @@ class _AppInitializerState extends ConsumerState<AppInitializer> with WidgetsBin
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      setState(() {
-        _showPermissionScreen = false;
-      });
+      _syncPermissionState();
     } else if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
       ref.read(ttsControllerProvider.notifier).stop();
     }
@@ -91,8 +115,16 @@ class _AppInitializerState extends ConsumerState<AppInitializer> with WidgetsBin
 
   @override
   Widget build(BuildContext context) {
+    if (_isCheckingPermission) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return _showPermissionScreen
-        ? PermissionScreen()
+        ? const PermissionScreen()
         : const DashboardScreen();
   }
 }

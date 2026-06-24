@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../gemma/model_manager_service.dart';
 
 class ModelManagementScreen extends StatefulWidget {
@@ -22,6 +26,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
 
   Future<void> _checkStatus() async {
     final status = await _modelManager.isModelDownloaded();
+    if (!mounted) return;
     setState(() => _isDownloaded = status);
   }
 
@@ -33,16 +38,20 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
 
     try {
       await _modelManager.downloadModel((p) {
-        setState(() => _progress = p);
+        if (mounted) {
+          setState(() => _progress = p);
+        }
       });
+      if (!mounted) return;
       setState(() {
         _isDownloaded = true;
         _isDownloading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gemma Model downloaded successfully!')),
+        const SnackBar(content: Text('Gemma model downloaded successfully!')),
       );
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isDownloading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Download failed: $e')),
@@ -53,52 +62,160 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('Model Management')),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.screenPadding),
           children: [
-            const Icon(Icons.psychology, size: 80, color: Colors.deepPurple),
-            const SizedBox(height: 24),
-            Text(
-              'Gemma AI Model',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'This model enables 100% offline notification summarization. It requires approximately 1.2 GB of space.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 48),
-            if (_isDownloading) ...[
-              LinearProgressIndicator(value: _progress),
-              const SizedBox(height: 16),
-              Text('${(_progress * 100).toStringAsFixed(1)}%'),
-            ] else if (_isDownloaded) ...[
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check_circle, color: Colors.green),
-                  SizedBox(width: 8),
-                  Text('Model is ready offline'),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.18),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
                 ],
               ),
-              const SizedBox(height: 24),
-              OutlinedButton(
-                onPressed: () { /* Logic to delete model */ },
-                child: const Text('Delete Model'),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.16),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    ),
+                    child: const Icon(Icons.psychology_rounded, color: Colors.white, size: 30),
+                  ),
+                  const SizedBox(width: AppSpacing.lg),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Gemma AI model', style: AppTypography.headingMedium.copyWith(color: Colors.white)),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Offline summarization for notifications. Requires about 1.2 GB of storage.',
+                          style: AppTypography.bodySmall.copyWith(color: Colors.white.withOpacity(0.9)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ] else ...[
-              ElevatedButton.icon(
-                onPressed: _startDownload,
-                icon: const Icon(Icons.download),
-                label: const Text('Download Gemma Model (1.2 GB)'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(50),
-                ),
+            ),
+            const SizedBox(height: AppSpacing.sectionGap),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.cardPadding),
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                border: Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
+                ],
               ),
-            ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.sm),
+                        decoration: BoxDecoration(
+                          color: _isDownloaded ? AppColors.success.withOpacity(0.1) : AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                        ),
+                        child: Icon(
+                          _isDownloaded ? Icons.check_circle_rounded : Icons.download_rounded,
+                          color: _isDownloaded ? AppColors.success : AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Model status', style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 2),
+                            Text(
+                              _isDownloaded ? 'Ready for offline use' : 'Not downloaded yet',
+                              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_isDownloading) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    LinearProgressIndicator(
+                      value: _progress,
+                      minHeight: 6,
+                      backgroundColor: AppColors.divider,
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text('${(_progress * 100).toStringAsFixed(1)}%', style: AppTypography.labelMedium),
+                  ],
+                  const SizedBox(height: AppSpacing.lg),
+                  if (_isDownloaded) ...[
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                        border: Border.all(color: AppColors.success.withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle_rounded, color: AppColors.success),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              'The model is available offline and ready for summarization.',
+                              style: AppTypography.bodySmall.copyWith(color: AppColors.success),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          // Placeholder until delete flow is wired up.
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded),
+                        label: const Text('Delete Model'),
+                      ),
+                    ),
+                  ] else ...[
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: _isDownloading ? null : _startDownload,
+                        icon: _isDownloading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.download_rounded),
+                        label: Text(_isDownloading ? 'Downloading...' : 'Download Gemma model'),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),

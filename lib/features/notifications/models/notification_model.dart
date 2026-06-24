@@ -35,6 +35,28 @@ class NotificationModel {
   }
 
   factory NotificationModel.fromMap(Map<String, dynamic> map) {
+    // Handle priority - can be either String or int
+    NotificationPriority parsedPriority;
+    final priorityValue = map['priority'];
+    
+    if (priorityValue is int) {
+      parsedPriority = NotificationPriority.values[priorityValue];
+    } else if (priorityValue is String) {
+      // Convert string to enum (from Kotlin database)
+      switch (priorityValue.toLowerCase()) {
+        case 'high':
+          parsedPriority = NotificationPriority.high;
+          break;
+        case 'low':
+          parsedPriority = NotificationPriority.low;
+          break;
+        default:
+          parsedPriority = NotificationPriority.medium;
+      }
+    } else {
+      parsedPriority = NotificationPriority.medium;
+    }
+    
     return NotificationModel(
       id: map['id'],
       appId: map['app_id'],
@@ -43,7 +65,7 @@ class NotificationModel {
       message: map['message'],
       timestamp: DateTime.fromMillisecondsSinceEpoch(map['timestamp']),
       isRead: map['read_status'] == 1,
-      priority: NotificationPriority.values[map['priority']],
+      priority: parsedPriority,
     );
   }
 }

@@ -95,7 +95,7 @@ class NotificationDatabaseHelper(context: Context) : SQLiteOpenHelper(context, D
                 put(KEY_MESSAGE, message)
                 put(KEY_TIMESTAMP, System.currentTimeMillis())
                 put(KEY_READ_STATUS, 0)
-                put(KEY_PRIORITY, detectPriority(title, message))
+                put(KEY_PRIORITY, detectPriorityIndex(title, message))
             }
             
             val notificationId = db.insert(TABLE_NOTIFICATIONS, null, notificationValues)
@@ -147,10 +147,10 @@ class NotificationDatabaseHelper(context: Context) : SQLiteOpenHelper(context, D
         return db.insert(TABLE_APPS, null, values)
     }
 
-    private fun detectPriority(title: String, message: String): String {
+    private fun detectPriorityIndex(title: String, message: String): Int {
         val content = "$title $message".lowercase()
         
-        // High priority patterns
+        // High priority patterns (index 2)
         val highPriorityPatterns = listOf(
             "otp", "verification code", "verify", "code is",
             "bank", "transaction", "payment", "credited", "debited",
@@ -160,11 +160,11 @@ class NotificationDatabaseHelper(context: Context) : SQLiteOpenHelper(context, D
         
         for (pattern in highPriorityPatterns) {
             if (content.contains(pattern)) {
-                return "high"
+                return 2 // NotificationPriority.high
             }
         }
         
-        // Low priority patterns
+        // Low priority patterns (index 0)
         val lowPriorityPatterns = listOf(
             "liked", "reacted", "followed",
             "offer", "sale", "discount", "deal",
@@ -173,10 +173,10 @@ class NotificationDatabaseHelper(context: Context) : SQLiteOpenHelper(context, D
         
         for (pattern in lowPriorityPatterns) {
             if (content.contains(pattern)) {
-                return "low"
+                return 0 // NotificationPriority.low
             }
         }
         
-        return "medium"
+        return 1 // NotificationPriority.medium (default)
     }
 }

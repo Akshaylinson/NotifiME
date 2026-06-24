@@ -544,13 +544,74 @@ class SettingsScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusLg)),
-        icon: const Icon(Icons.cleaning_services_rounded, color: AppColors.primary, size: 48),
-        title: Text('Run cleanup now', style: AppTypography.headingMedium),
-        content: Text('This will delete all notifications older than ${ref.read(appSettingsProvider).retentionDays} days.\n\nDo you want to continue?', style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+              ),
+              child: const Icon(Icons.cleaning_services_rounded, color: AppColors.primary, size: 24),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text('Run Cleanup Now', style: AppTypography.headingMedium.copyWith(color: AppColors.textPrimary)),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This will delete all notifications older than ${ref.read(appSettingsProvider).retentionDays} days.',
+              style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 20),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'This action cannot be undone.',
+                      style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), style: FilledButton.styleFrom(backgroundColor: AppColors.primary), child: const Text('Run Cleanup')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+            ),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+              ),
+            ),
+            child: const Text('Run Cleanup'),
+          ),
         ],
       ),
     );
@@ -561,8 +622,22 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
+        backgroundColor: AppColors.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusLg)),
-        child: const Padding(padding: EdgeInsets.all(AppSpacing.xl), child: Column(mainAxisSize: MainAxisSize.min, children: [CircularProgressIndicator(color: AppColors.primary), SizedBox(height: AppSpacing.md), Text('Running cleanup...')])),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(color: AppColors.primary),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Running cleanup...',
+                style: AppTypography.bodyLarge.copyWith(color: AppColors.textPrimary),
+              ),
+            ],
+          ),
+        ),
       ),
     );
 
@@ -587,18 +662,75 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusLg)),
-        icon: const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 48),
-        title: Text('Clear all notifications', style: AppTypography.headingMedium),
-        content: Text('This will permanently delete all notifications from the database. This action cannot be undone.\n\nAre you sure you want to continue?', style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+              ),
+              child: const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 24),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text('Clear All Notifications', style: AppTypography.headingMedium.copyWith(color: AppColors.textPrimary)),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This will permanently delete all notifications from the database.',
+              style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                border: Border.all(color: AppColors.error.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline_rounded, color: AppColors.error, size: 20),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'This action cannot be undone.',
+                      style: AppTypography.bodySmall.copyWith(color: AppColors.error, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+            ),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () async {
               Navigator.pop(context);
               await _clearAllNotifications(context, ref);
             },
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+              ),
+            ),
             child: const Text('Delete All'),
           ),
         ],
@@ -611,8 +743,22 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
+        backgroundColor: AppColors.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusLg)),
-        child: const Padding(padding: EdgeInsets.all(AppSpacing.xl), child: Column(mainAxisSize: MainAxisSize.min, children: [CircularProgressIndicator(color: AppColors.primary), SizedBox(height: AppSpacing.md), Text('Clearing notifications...')])),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(color: AppColors.primary),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Clearing notifications...',
+                style: AppTypography.bodyLarge.copyWith(color: AppColors.textPrimary),
+              ),
+            ],
+          ),
+        ),
       ),
     );
 

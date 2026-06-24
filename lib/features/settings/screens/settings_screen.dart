@@ -44,6 +44,15 @@ String getVoiceLabel(VoiceModel voice) {
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
+  String _getVoiceDescription(String voiceId) {
+    if (voiceId.startsWith('F')) {
+      return 'Female voice - Clear and natural';
+    } else if (voiceId.startsWith('M')) {
+      return 'Male voice - Deep and resonant';
+    }
+    return 'Standard voice model';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedVoice = ref.watch(selectedVoiceProvider);
@@ -201,6 +210,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget _voiceDropdown(WidgetRef ref, String currentVoiceId) {
     final voicesAsync = ref.watch(availableVoicesProvider);
     final currentName = getHumanName(currentVoiceId);
+    final description = _getVoiceDescription(currentVoiceId);
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
@@ -212,137 +222,115 @@ class SettingsScreen extends ConsumerWidget {
       ),
       child: Material(
         color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.cardPadding),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                ),
-                child: const Icon(Icons.record_voice_over_rounded, color: AppColors.primary, size: 20),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: voicesAsync.when(
-                  data: (voices) {
-                    if (voices.isEmpty) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Voice selection',
-                            style: AppTypography.bodyLarge.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            currentName,
-                            style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-                          ),
-                        ],
-                      );
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.cardPadding,
+            vertical: AppSpacing.xs,
+          ),
+          child: voicesAsync.when(
+            data: (voices) {
+              if (voices.isEmpty) {
+                return _voiceSelectionContent(currentName, description);
+              }
+
+              final sortedVoices = voices.toList()
+                ..sort((a, b) => getVoiceLabel(a).compareTo(getVoiceLabel(b)));
+              final selectedVoiceExists = sortedVoices.any((voice) => voice.id == currentVoiceId);
+
+              return DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  value: selectedVoiceExists ? currentVoiceId : null,
+                  hint: _voiceSelectionContent(currentName, description),
+                  selectedItemBuilder: (context) => sortedVoices
+                      .map((_) => _voiceSelectionContent(currentName, description))
+                      .toList(),
+                  icon: const SizedBox.shrink(),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                  dropdownColor: AppColors.cardBackground,
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref.read(appSettingsProvider.notifier).setVoice(value);
                     }
-
-                    final selectedVoiceExists = voices.any((voice) => voice.id == currentVoiceId);
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Voice selection',
-                          style: AppTypography.bodyLarge.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            value: selectedVoiceExists ? currentVoiceId : null,
-                            hint: Text(
-                              currentName,
-                              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            icon: const SizedBox.shrink(),
-                            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                            dropdownColor: AppColors.cardBackground,
-                            style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-                            onChanged: (value) {
-                              if (value != null) {
-                                ref.read(appSettingsProvider.notifier).setVoice(value);
-                              }
-                            },
-                            items: () {
-                              final sortedVoices = voices.toList()
-                                ..sort((a, b) => getVoiceLabel(a).compareTo(getVoiceLabel(b)));
-                              return sortedVoices.map(
-                                (voice) => DropdownMenuItem<String>(
-                                  value: voice.id,
-                                  child: Text(
-                                    getVoiceLabel(voice),
-                                    style: TextStyle(
-                                      fontWeight: voice.id == currentVoiceId ? FontWeight.w600 : FontWeight.w400,
-                                      color: voice.id == currentVoiceId ? AppColors.primary : AppColors.textPrimary,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ).toList();
-                            }(),
-                          ),
-                        ),
-                      ],
-                    );
                   },
-                  loading: () => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Voice selection',
-                        style: AppTypography.bodyLarge.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                  items: sortedVoices
+                      .map(
+                        (voice) => DropdownMenuItem<String>(
+                          value: voice.id,
+                          child: Text(
+                            getVoiceLabel(voice),
+                            style: TextStyle(
+                              fontWeight: voice.id == currentVoiceId ? FontWeight.w600 : FontWeight.w400,
+                              color: voice.id == currentVoiceId ? AppColors.primary : AppColors.textPrimary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        currentName,
-                        style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-                      ),
-                    ],
-                  ),
-                  error: (_, __) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Voice selection',
-                        style: AppTypography.bodyLarge.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        currentName,
-                        style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-                      ),
-                    ],
-                  ),
+                      )
+                      .toList(),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
-            ],
+              );
+            },
+            loading: () => _voiceSelectionContent(currentName, 'Loading available voices...'),
+            error: (_, __) => _voiceSelectionContent(currentName, description),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _voiceSelectionContent(String selectedName, String description) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          ),
+          child: const Icon(Icons.record_voice_over_rounded, color: AppColors.primary, size: 20),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Voice selection',
+                style: AppTypography.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  fontSize: 13,
+                  height: 1.2,
+                ),
+              ),
+              Text(
+                selectedName,
+                style: AppTypography.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                  fontSize: 17,
+                  height: 1.3,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                description,
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                  fontSize: 11,
+                  height: 1.2,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
+      ],
     );
   }
 

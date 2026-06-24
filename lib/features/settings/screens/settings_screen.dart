@@ -224,10 +224,7 @@ class SettingsScreen extends ConsumerWidget {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.cardPadding,
-            vertical: AppSpacing.xs,
-          ),
+          padding: const EdgeInsets.all(AppSpacing.cardPadding),
           child: voicesAsync.when(
             data: (voices) {
               if (voices.isEmpty) {
@@ -238,37 +235,40 @@ class SettingsScreen extends ConsumerWidget {
                 ..sort((a, b) => getVoiceLabel(a).compareTo(getVoiceLabel(b)));
               final selectedVoiceExists = sortedVoices.any((voice) => voice.id == currentVoiceId);
 
-              return DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  isExpanded: true,
-                  value: selectedVoiceExists ? currentVoiceId : null,
-                  hint: _voiceSelectionContent(currentName, description),
-                  selectedItemBuilder: (context) => sortedVoices
-                      .map((_) => _voiceSelectionContent(currentName, description))
-                      .toList(),
-                  icon: const SizedBox.shrink(),
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                  dropdownColor: AppColors.cardBackground,
-                  onChanged: (value) {
-                    if (value != null) {
-                      ref.read(appSettingsProvider.notifier).setVoice(value);
-                    }
-                  },
-                  items: sortedVoices
-                      .map(
-                        (voice) => DropdownMenuItem<String>(
-                          value: voice.id,
-                          child: Text(
-                            getVoiceLabel(voice),
-                            style: TextStyle(
-                              fontWeight: voice.id == currentVoiceId ? FontWeight.w600 : FontWeight.w400,
-                              color: voice.id == currentVoiceId ? AppColors.primary : AppColors.textPrimary,
+              return ButtonTheme(
+                alignedDropdown: true,
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: selectedVoiceExists ? currentVoiceId : null,
+                    hint: _voiceSelectionContent(currentName, description),
+                    selectedItemBuilder: (context) => sortedVoices
+                        .map((_) => _voiceSelectionContent(currentName, description))
+                        .toList(),
+                    icon: const SizedBox.shrink(),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                    dropdownColor: AppColors.cardBackground,
+                    onChanged: (value) {
+                      if (value != null) {
+                        ref.read(appSettingsProvider.notifier).setVoice(value);
+                      }
+                    },
+                    items: sortedVoices
+                        .map(
+                          (voice) => DropdownMenuItem<String>(
+                            value: voice.id,
+                            child: Text(
+                              getVoiceLabel(voice),
+                              style: TextStyle(
+                                fontWeight: voice.id == currentVoiceId ? FontWeight.w600 : FontWeight.w400,
+                                color: voice.id == currentVoiceId ? AppColors.primary : AppColors.textPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      )
-                      .toList(),
+                        )
+                        .toList(),
+                  ),
                 ),
               );
             },
@@ -302,16 +302,17 @@ class SettingsScreen extends ConsumerWidget {
                 style: AppTypography.bodyLarge.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
-                  fontSize: 13,
+                  fontSize: 12,
                   height: 1.2,
                 ),
               ),
+              const SizedBox(height: 1),
               Text(
                 selectedName,
                 style: AppTypography.bodyLarge.copyWith(
                   fontWeight: FontWeight.w700,
                   color: AppColors.primary,
-                  fontSize: 17,
+                  fontSize: 16,
                   height: 1.3,
                 ),
                 overflow: TextOverflow.ellipsis,

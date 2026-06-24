@@ -6,7 +6,7 @@ import 'core/theme/app_theme.dart';
 import 'core/observers/audio_lifecycle_observer.dart';
 import 'core/services/retention_policy_service.dart';
 import 'features/audio/tts/tts_provider.dart';
-import 'features/dashboard/screens/dashboard_screen.dart';
+import 'features/dashboard/screens/dashboard_screen_modern.dart';
 import 'features/notifications/listener/notification_receiver.dart';
 import 'features/notifications/repository/notification_provider.dart';
 import 'features/notifications/screens/permission_screen.dart';
@@ -125,6 +125,6 @@ class _AppInitializerState extends ConsumerState<AppInitializer> with WidgetsBin
 
     return _showPermissionScreen
         ? const PermissionScreen()
-        : const DashboardScreen();
+        : const DashboardScreenModern();
   }
 }

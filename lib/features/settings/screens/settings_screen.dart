@@ -725,10 +725,10 @@ class VoiceSelectionDialog extends ConsumerWidget {
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
       ),
       child: Container(
-        width: screenWidth * 0.9,
+        width: screenWidth * 0.95,
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.85,
-          maxWidth: 600,
+          maxWidth: 700,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -868,26 +868,16 @@ class _VoiceTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isSelected = voice.id == selectedVoice;
     final displayName = humanName ?? _getHumanName(voice.id);
-    final voiceType = voice.gender == 'Female' ? '👩' : (voice.gender == 'Male' ? '👨' : '🎤');
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       decoration: BoxDecoration(
-        color: isSelected 
-            ? AppColors.primary.withOpacity(0.08)
-            : AppColors.cardBackground,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
         border: Border.all(
           color: isSelected ? AppColors.primary : AppColors.border,
-          width: isSelected ? 2 : 1,
+          width: isSelected ? 1.5 : 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -902,22 +892,18 @@ class _VoiceTile extends ConsumerWidget {
             child: Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    gradient: isSelected 
-                        ? AppColors.primaryGradient 
-                        : null,
                     color: isSelected 
-                        ? null 
+                        ? AppColors.primary.withOpacity(0.1)
                         : AppColors.background,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                   ),
-                  child: Center(
-                    child: Text(
-                      voiceType,
-                      style: const TextStyle(fontSize: 22),
-                    ),
+                  child: Icon(
+                    Icons.record_voice_over_rounded,
+                    color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                    size: 22,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -942,28 +928,11 @@ class _VoiceTile extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (isSelected)
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check_rounded,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  )
-                else
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.border, width: 2),
-                    ),
-                  ),
+                Icon(
+                  isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                  color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                  size: 24,
+                ),
               ],
             ),
           ),

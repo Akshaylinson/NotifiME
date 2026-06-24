@@ -152,27 +152,17 @@ class SettingsScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Personalize your assistant',
+                  'Customize Notiva AI',
                   style: AppTypography.headingMedium.copyWith(
                     color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Voice, speech, and storage options for Notiva AI',
+                  'Configure voice, speech, and storage settings',
                   style: AppTypography.bodySmall.copyWith(
                     color: Colors.white.withOpacity(0.9),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: [
-                    _chip('Voice: $selectedVoice'),
-                    _chip('Auto-read: ${settings.autoRead ? 'On' : 'Off'}'),
-                    _chip('Retention: ${settings.retentionDays}d'),
-                  ],
                 ),
               ],
             ),
@@ -310,6 +300,7 @@ class SettingsScreen extends ConsumerWidget {
       trailing: Switch.adaptive(
         value: value,
         activeColor: AppColors.primary,
+        activeTrackColor: AppColors.primary.withOpacity(0.5),
         onChanged: onChanged,
       ),
       onTap: () => onChanged(!value),
